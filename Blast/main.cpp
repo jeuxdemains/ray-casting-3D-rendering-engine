@@ -6,10 +6,18 @@
 //  Copyright © 2019 Yuriy Georgiev. All rights reserved.
 //
 
+#define SCREEN_WIDTH 800
+#define SCREEN_HEIGHT 600
+
 #include <iostream>
+#include "Game.hpp"
+#include "Renderer.hpp"
+#include "Map.hpp"
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    
+    Game *game = new Game(SCREEN_WIDTH, SCREEN_HEIGHT);
+    
+    delete game;
     return 0;
 }

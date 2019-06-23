@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		52EA5D4322BA2E2A0021CCC0 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52EA5D4222BA2E2A0021CCC0 /* main.cpp */; };
+		52EA5D4C22BA2E3C0021CCC0 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52EA5D4A22BA2E3C0021CCC0 /* SDL2.framework */; };
+		52EA5D4D22BA2E3C0021CCC0 /* SDL2_image.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52EA5D4B22BA2E3C0021CCC0 /* SDL2_image.framework */; };
+		52EA5D5022BA2E660021CCC0 /* Game.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52EA5D4E22BA2E660021CCC0 /* Game.cpp */; };
+		52EA5D5322BA2E720021CCC0 /* Renderer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52EA5D5122BA2E720021CCC0 /* Renderer.cpp */; };
+		52EA5D5622BA2E920021CCC0 /* Map.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52EA5D5422BA2E920021CCC0 /* Map.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,6 +30,14 @@
 /* Begin PBXFileReference section */
 		52EA5D3F22BA2E2A0021CCC0 /* Blast */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Blast; sourceTree = BUILT_PRODUCTS_DIR; };
 		52EA5D4222BA2E2A0021CCC0 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		52EA5D4A22BA2E3C0021CCC0 /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
+		52EA5D4B22BA2E3C0021CCC0 /* SDL2_image.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_image.framework; path = ../../../../../Library/Frameworks/SDL2_image.framework; sourceTree = "<group>"; };
+		52EA5D4E22BA2E660021CCC0 /* Game.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Game.cpp; sourceTree = "<group>"; };
+		52EA5D4F22BA2E660021CCC0 /* Game.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Game.hpp; sourceTree = "<group>"; };
+		52EA5D5122BA2E720021CCC0 /* Renderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Renderer.cpp; sourceTree = "<group>"; };
+		52EA5D5222BA2E720021CCC0 /* Renderer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Renderer.hpp; sourceTree = "<group>"; };
+		52EA5D5422BA2E920021CCC0 /* Map.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Map.cpp; sourceTree = "<group>"; };
+		52EA5D5522BA2E920021CCC0 /* Map.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Map.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +45,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52EA5D4C22BA2E3C0021CCC0 /* SDL2.framework in Frameworks */,
+				52EA5D4D22BA2E3C0021CCC0 /* SDL2_image.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,6 +58,7 @@
 			children = (
 				52EA5D4122BA2E2A0021CCC0 /* Blast */,
 				52EA5D4022BA2E2A0021CCC0 /* Products */,
+				52EA5D4922BA2E3C0021CCC0 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -58,8 +74,23 @@
 			isa = PBXGroup;
 			children = (
 				52EA5D4222BA2E2A0021CCC0 /* main.cpp */,
+				52EA5D4E22BA2E660021CCC0 /* Game.cpp */,
+				52EA5D4F22BA2E660021CCC0 /* Game.hpp */,
+				52EA5D5122BA2E720021CCC0 /* Renderer.cpp */,
+				52EA5D5222BA2E720021CCC0 /* Renderer.hpp */,
+				52EA5D5422BA2E920021CCC0 /* Map.cpp */,
+				52EA5D5522BA2E920021CCC0 /* Map.hpp */,
 			);
 			path = Blast;
+			sourceTree = "<group>";
+		};
+		52EA5D4922BA2E3C0021CCC0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				52EA5D4B22BA2E3C0021CCC0 /* SDL2_image.framework */,
+				52EA5D4A22BA2E3C0021CCC0 /* SDL2.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -118,7 +149,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52EA5D5322BA2E720021CCC0 /* Renderer.cpp in Sources */,
 				52EA5D4322BA2E2A0021CCC0 /* main.cpp in Sources */,
+				52EA5D5622BA2E920021CCC0 /* Map.cpp in Sources */,
+				52EA5D5022BA2E660021CCC0 /* Game.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,6 +274,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)/Frameworks",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -248,6 +286,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(LOCAL_LIBRARY_DIR)/Frameworks",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
