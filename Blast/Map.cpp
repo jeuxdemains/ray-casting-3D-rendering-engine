@@ -21,16 +21,27 @@ Map::~Map()
     
 }
 
-vector<string> Map::getCurrentMap()
+vector<string> Map::currentMap()
 {
     return this->map;
 }
 
-Map::MapCoords Map::posToCoordinate(float x, float y)
+Map::MapCoords Map::posToCrd(float x, float y)
 {
     Map::MapCoords nMapXYCoords;
+    
     nMapXYCoords.x = floor(x / this->fMapBlockW);
     nMapXYCoords.y = floor(y / this->fMapBlockH);
     
     return nMapXYCoords;
+}
+
+Map::MapXYPos Map::crdToPos(int x, int y)
+{
+    Map::MapXYPos fMapXYPos;
+    
+    fMapXYPos.x = float(x * this->fMapBlockW);
+    fMapXYPos.y = float(x * this->fMapBlockH);
+    
+    return fMapXYPos;
 }

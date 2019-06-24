@@ -57,6 +57,10 @@ void Game::GameLoop()
             case SDL_KEYDOWN:
                 if (event.key.keysym.sym == SDLK_ESCAPE)
                     game_loop_running = false;
+                
+                if (event.key.keysym.sym == SDLK_d)
+                    renderer->debug = !renderer->debug;
+                
                 break;
             case SDL_QUIT:
                 game_loop_running = false;
@@ -83,8 +87,8 @@ void Game::GameLoop()
         this->renderer->prepareRender();
         
         
-        this->renderer->drawMap(this->map->getCurrentMap());
-        vector<Renderer::interceptions> intercepts = this->renderer->castRays(RAYS_NUMBER, fPlayerX, fPlayerY, fPlayerA, map->getCurrentMap());
+        this->renderer->drawMap(this->map->currentMap());
+        vector<Renderer::interceptions> intercepts = this->renderer->castRays(RAYS_NUMBER, fPlayerX, fPlayerY, fPlayerA, map->currentMap());
         this->renderer->draw3dScene(intercepts);
         
         this->renderer->renderFrame();
@@ -108,17 +112,18 @@ void Game::GameLoop()
 
 void Game::collisionDetection(float fOldPlayerX, float fOldPlayerY)
 {
-    Map::MapCoords mapCoords = map->posToCoordinate(fPlayerX, fPlayerY);
-//    cout << mapCoords.x << ":" << mapCoords.y << endl;
+    Map::MapCoords mapCoords = map->posToCrd(fPlayerX, fPlayerY);
     
-    vector<string> map = this->map->getCurrentMap();
+    vector<string> map = this->map->currentMap();
     
-    if ((fPlayerX > fOldPlayerX && map[mapCoords.y][mapCoords.x+1] == '#') || (fPlayerX < fOldPlayerX && map[mapCoords.y][mapCoords.x-1] == '#'))
+    if ((fPlayerX > fOldPlayerX && map[mapCoords.y][mapCoords.x+1] == '#') ||
+        (fPlayerX < fOldPlayerX && map[mapCoords.y][mapCoords.x-1] == '#'))
     {
         fPlayerX = fOldPlayerX;
     }
     
-    if ((fPlayerY > fOldPlayerY && map[mapCoords.y+1][mapCoords.x] == '#') || (fPlayerY < fOldPlayerY && map[mapCoords.y-1][mapCoords.x] == '#'))
+    if ((fPlayerY > fOldPlayerY && map[mapCoords.y+1][mapCoords.x] == '#') ||
+        (fPlayerY < fOldPlayerY && map[mapCoords.y-1][mapCoords.x] == '#'))
     {
         fPlayerY = fOldPlayerY;
     }

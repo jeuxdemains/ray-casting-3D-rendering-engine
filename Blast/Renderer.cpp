@@ -14,6 +14,8 @@ using namespace std;
 
 Renderer::Renderer(int winW, int winH, SDL_Renderer *renderer)
 {
+    IMG_Init(IMG_INIT_PNG);
+   
     this->renderer = renderer;
     this->screenW = winW;
     this->screenH = winH;
@@ -21,7 +23,7 @@ Renderer::Renderer(int winW, int winH, SDL_Renderer *renderer)
 
 Renderer::~Renderer()
 {
-
+    IMG_Quit();
 }
 
 void Renderer::renderFrame()
@@ -104,6 +106,8 @@ vector<Renderer::interceptions> Renderer::castRays(int numOfRays,float x, float 
                 intercepts.xTo = xTo;
                 intercepts.yTo = yTo;
                 intercepts.distance = totalDist;
+                intercepts.mapX = mapX;
+                intercepts.mapY = mapY;
                 
                 interceptions.push_back(intercepts);
                 
@@ -123,7 +127,15 @@ vector<Renderer::interceptions> Renderer::castRays(int numOfRays,float x, float 
 
 void Renderer::drawLine(float x, float y, float xTo, float yTo)
 {
-    SDL_SetRenderDrawColor(this->renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+    int r, g, b;
+    r = g = b = 255;
+    
+    if (debug)
+    {
+        r = 255; g = b = 0;
+    }
+    
+    SDL_SetRenderDrawColor(this->renderer, r, g, b, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(this->renderer, x, y, xTo, yTo);
 }
 
@@ -154,6 +166,23 @@ void Renderer::drawRect(float x, float y, float w, float h, distanceShader shade
 void Renderer::draw3dScene(vector<interceptions> interceptions)
 {
     int rayIndex = 0;
+    SDL_Rect src_rect, dest_rect;
+    int lastMapXObjCrd = 0;
+    int lastMapYObjCrd = 0;
+    
+    struct qpoint {
+        float x1;
+        float y1;
+        float x2;
+        float y2;
+        float x3;
+        float y3;
+        float x4;
+        float y4;
+    };
+    
+    qpoint curQuadPoint;
+    vector<qpoint> qPoint;
     
     for (Renderer::interceptions intercept : interceptions)
     {
@@ -167,10 +196,68 @@ void Renderer::draw3dScene(vector<interceptions> interceptions)
         float wallFragW = (this->screenW / (interceptions.size() - 1));
         float wallFragX = rayIndex * wallFragW;
         
+//        if (this->wallTexture == nullptr)
+//        {
+//            SDL_Surface *image = IMG_Load("assets/img.jpg");
+//            this->wallTexture = SDL_CreateTextureFromSurface(this->renderer, image);
+//        }
+        
+//        src_rect.x = wallFragX;
+//        src_rect.y = wallFragY;
+//        src_rect.w = wallFragW;
+//        src_rect.h = wallFragH;
+//
+//        dest_rect.x = wallFragX;
+//        dest_rect.y = wallFragY;
+//        dest_rect.w = wallFragW;
+//        dest_rect.h = wallFragH;
+        
+//        this->textureRect(this->wallTexture, rect);
+//        SDL_RenderCopy(this->renderer, this->wallTexture, &src_rect, &dest_rect);
         fillRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShader(distance));
 //        drawRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShader(distance));
         
+        //if still at the same wall object
+        if (lastMapYObjCrd == intercept.mapY && lastMapXObjCrd == intercept.mapX)
+        {
+            curQuadPoint.x2 = wallFragX;
+            curQuadPoint.y2 = wallFragY;
+            curQuadPoint.x3 = wallFragX;
+            curQuadPoint.y3 = wallFragY + wallFragH;
+        }
+        else //draw the surface
+        {
+            curQuadPoint.x2 = wallFragX;
+            curQuadPoint.x3 = wallFragX;
+            
+            if (debug)
+            {
+                this->drawLine(curQuadPoint.x1, curQuadPoint.y1, curQuadPoint.x2, curQuadPoint.y2);
+                this->drawLine(curQuadPoint.x2, curQuadPoint.y2, curQuadPoint.x3, curQuadPoint.y3);
+                this->drawLine(curQuadPoint.x3, curQuadPoint.y3, curQuadPoint.x1, curQuadPoint.y4);
+                this->drawLine(curQuadPoint.x1, curQuadPoint.y4, curQuadPoint.x1, curQuadPoint.y1);
+            }
+            
+            //prepare new surface
+            curQuadPoint.x1 = wallFragX;
+            curQuadPoint.y1 = wallFragY;
+            curQuadPoint.y2 = wallFragY;
+            curQuadPoint.y3 = wallFragY + wallFragH;
+            curQuadPoint.y4 = wallFragY + wallFragH;
+            curQuadPoint.x4 = wallFragX;
+        }
+        
         rayIndex++;
+        lastMapXObjCrd = intercept.mapX;
+        lastMapYObjCrd = intercept.mapY;
+    }
+    
+    if (debug)
+    {
+        this->drawLine(curQuadPoint.x1, curQuadPoint.y1, curQuadPoint.x2, curQuadPoint.y2);
+        this->drawLine(curQuadPoint.x2, curQuadPoint.y2, curQuadPoint.x3, curQuadPoint.y3);
+        this->drawLine(curQuadPoint.x3, curQuadPoint.y3, curQuadPoint.x1, curQuadPoint.y4);
+        this->drawLine(curQuadPoint.x1, curQuadPoint.y4, curQuadPoint.x1, curQuadPoint.y1);
     }
 }
 
@@ -186,4 +273,9 @@ Renderer::distanceShader Renderer::calcDistShader(float distance)
     distS.a = 250;
     
     return distS;
+}
+
+void Renderer::textureRect(SDL_Texture *texture, SDL_Rect rect)
+{
+    SDL_RenderCopy(this->renderer, this->wallTexture, NULL, &rect);
 }

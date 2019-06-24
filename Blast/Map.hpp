@@ -24,6 +24,7 @@ private:
     vector<string> map {
         {"############################################################"},
         {"#............................##............................#"},
+        {"#............................##............................#"},
         {"#............................##........#....#....#.........#"},
         {"#............................##............................#"},
         {"#...............#............##........#....#....#.........#"},
@@ -50,10 +51,18 @@ public:
         int y;
     };
     
+    struct MapXYPos {
+        float x;
+        float y;
+    };
+    
     Map();
     ~Map();
-    vector<string> getCurrentMap();
-    Map::MapCoords posToCoordinate(float x, float y);
+    
+    vector<string> currentMap();
+    
+    Map::MapCoords posToCrd(float x, float y);
+    Map::MapXYPos crdToPos(int x, int y);
     
     float fMapBlockW = 5;
     float fMapBlockH = 5;

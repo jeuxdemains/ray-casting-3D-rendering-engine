@@ -16,6 +16,7 @@
 #include <math.h>
 #include <cmath>
 #include <SDL2/SDL.h>
+#include <SDL2_image/SDL_image.h>
 
 #include "Map.hpp"
 
@@ -27,6 +28,8 @@ private:
     int screenW, screenH;
     int wallHFactor = 10;
     
+    SDL_Texture *wallTexture = nullptr;
+    
 public:
     Renderer(int winW, int winH, SDL_Renderer *renderer);
     ~Renderer();
@@ -37,6 +40,8 @@ public:
         float xTo;
         float yTo;
         float distance;
+        int mapX;
+        int mapY;
     };
     
     struct distanceShader {
@@ -53,6 +58,9 @@ public:
     vector<interceptions> castRays(int numOfRays,float x, float y, float angle, vector<string> map);
     void draw3dScene(vector<interceptions> interceptions);
     
+    //helper functions
+    void textureRect(SDL_Texture *texture, SDL_Rect rect);
+    
     //primitives
     void drawLine(float x, float y, float xTo, float yTo);
     void fillRect(float x, float y, float w, float h, distanceShader shaderColor);
@@ -60,6 +68,8 @@ public:
     
     //coloring
     distanceShader calcDistShader(float distance);
+    
+    bool debug = false;
 };
 
 #endif /* Renderer_hpp */
