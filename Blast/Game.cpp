@@ -86,10 +86,11 @@ void Game::GameLoop()
         
         this->renderer->prepareRender();
         
-        
         this->renderer->drawMap(this->map->currentMap());
         vector<Renderer::interceptions> intercepts = this->renderer->castRays(RAYS_NUMBER, fPlayerX, fPlayerY, fPlayerA, map->currentMap());
         this->renderer->draw3dScene(intercepts);
+        if (renderer->debug)
+            renderer->drawText("DEBUG: ON", renderer->screenW - 120, 5, 100, 24, 255, 0, 0);
         
         this->renderer->renderFrame();
         

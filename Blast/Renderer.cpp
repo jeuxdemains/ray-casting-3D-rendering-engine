@@ -15,6 +15,7 @@ using namespace std;
 Renderer::Renderer(int winW, int winH, SDL_Renderer *renderer)
 {
     IMG_Init(IMG_INIT_PNG);
+    TTF_Init();
    
     this->renderer = renderer;
     this->screenW = winW;
@@ -24,6 +25,7 @@ Renderer::Renderer(int winW, int winH, SDL_Renderer *renderer)
 Renderer::~Renderer()
 {
     IMG_Quit();
+    TTF_Quit();
 }
 
 void Renderer::renderFrame()
@@ -69,12 +71,12 @@ void Renderer::drawMap(vector<string> map)
 vector<Renderer::interceptions> Renderer::castRays(int numOfRays,float x, float y, float angle, vector<string> map)
 {
     float FOV = 60 / (360 / PI);
-    float xTo = x;
-    float yTo = y;
+    double xTo = x;
+    double yTo = y;
     float stepInc = 0.01f;
     int mapX = 0;
     int mapY = 0;
-    
+
     Map *classMap = new Map();
     float mapBlockSizeW = (float)classMap->fMapBlockW;
     float mapBlockSizeH = (float)classMap->fMapBlockH;
@@ -88,7 +90,7 @@ vector<Renderer::interceptions> Renderer::castRays(int numOfRays,float x, float 
         xTo = x;
         yTo = y;
         
-        //interpolate till collision
+        //extend ray till collision
         while (!collision)
         {
             mapX = floor(xTo / mapBlockSizeW);
@@ -96,9 +98,42 @@ vector<Renderer::interceptions> Renderer::castRays(int numOfRays,float x, float 
             
             if (map[mapY][mapX] == '#')
             {
-                float distX = fabs((x - xTo) * cosf(angle));
-                float distY = fabs((y - yTo) * sinf(angle));
-                float totalDist = fabs(distX + distY);
+                double distX = fabs((x - xTo) * cosf(angle));
+                double distY = fabs((y - yTo) * sinf(angle));
+                double totalDist = fabs(distX + distY);
+                
+                //get wall corners coordinates in screen space
+                //uses: MapX, MapY, mapBlockSizeW, mapBlockSizeH
+
+                float tileCoordX1 = mapX * mapBlockSizeW;
+                float tileCoordY1 = mapY * mapBlockSizeH;
+                float tileCoordX2 = ((mapX+1) * mapBlockSizeW);
+                float tileCoordY2 = ((mapY+1) * mapBlockSizeH);
+                
+                float fCornerDist[4] = {0,0,0,0};
+                
+                bool isCorner = false;
+                
+                if ((tileCoordX1 == round(xTo) || tileCoordX2 == round(xTo)) &&
+                    (tileCoordY1 == round(yTo) || tileCoordY2 == round(yTo)))
+                {
+                    isCorner = true;
+                    
+                    float c_distX = fabs(x - tileCoordX1) * cosf(angle);
+                    float c_distY = fabs(y - tileCoordY1) * sinf(angle);
+                    fCornerDist[0] = fabs(c_distX - c_distY);
+                    
+                    c_distX = fabs(x - tileCoordX2) * cosf(angle);
+                    fCornerDist[1] = fabs(c_distX - c_distY);
+                    
+                    c_distX = fabs(x - tileCoordX2) * cosf(angle);
+                    c_distY = fabs(y - tileCoordY2) * sinf(angle);
+                    fCornerDist[2] = fabs(c_distX - c_distY);
+                    
+                    c_distX = fabs(x - tileCoordX1) * cosf(angle);
+                    c_distY = fabs(y - tileCoordY2) * sinf(angle);
+                    fCornerDist[3] = fabs(c_distX - c_distY);
+                }
                 
                 Renderer::interceptions intercepts;
                 intercepts.x = x;
@@ -108,6 +143,15 @@ vector<Renderer::interceptions> Renderer::castRays(int numOfRays,float x, float 
                 intercepts.distance = totalDist;
                 intercepts.mapX = mapX;
                 intercepts.mapY = mapY;
+                intercepts.isCorner = isCorner;
+                intercepts.objX1 = tileCoordX1;
+                intercepts.objY1 = tileCoordY1;
+                intercepts.objX2 = tileCoordX2;
+                intercepts.objY2 = tileCoordY2;
+                intercepts.corner1Dist = fCornerDist[0];
+                intercepts.corner2Dist = fCornerDist[1];
+                intercepts.corner3Dist = fCornerDist[2];
+                intercepts.corner4Dist = fCornerDist[3];
                 
                 interceptions.push_back(intercepts);
                 
@@ -118,7 +162,7 @@ vector<Renderer::interceptions> Renderer::castRays(int numOfRays,float x, float 
             yTo += stepInc * sinf(angle + angleDelta);
         }
         
-        //finally draw the line once collision is detected
+        //finally draw the line on the map once collision is detected
         this->drawLine(x, y, xTo, yTo);
     }
     
@@ -166,27 +210,15 @@ void Renderer::drawRect(float x, float y, float w, float h, distanceShader shade
 void Renderer::draw3dScene(vector<interceptions> interceptions)
 {
     int rayIndex = 0;
-    SDL_Rect src_rect, dest_rect;
-    int lastMapXObjCrd = 0;
-    int lastMapYObjCrd = 0;
-    
-    struct qpoint {
-        float x1;
-        float y1;
-        float x2;
-        float y2;
-        float x3;
-        float y3;
-        float x4;
-        float y4;
-    };
-    
-    qpoint curQuadPoint;
-    vector<qpoint> qPoint;
+    int map_x_crd_last = 0;
+    int map_y_crd_last = 0;
+
+    Renderer::qpoint curQPoint;
+    vector<Renderer::qpoint> surfacesPointsList;
     
     for (Renderer::interceptions intercept : interceptions)
     {
-        float distance = intercept.distance;
+        double distance = intercept.distance;
         
         float wallFragH = this->wallHFactor / (distance / this->screenH);
         if (wallFragH < 40)
@@ -196,69 +228,69 @@ void Renderer::draw3dScene(vector<interceptions> interceptions)
         float wallFragW = (this->screenW / (interceptions.size() - 1));
         float wallFragX = rayIndex * wallFragW;
         
-//        if (this->wallTexture == nullptr)
-//        {
-//            SDL_Surface *image = IMG_Load("assets/img.jpg");
-//            this->wallTexture = SDL_CreateTextureFromSurface(this->renderer, image);
-//        }
-        
-//        src_rect.x = wallFragX;
-//        src_rect.y = wallFragY;
-//        src_rect.w = wallFragW;
-//        src_rect.h = wallFragH;
-//
-//        dest_rect.x = wallFragX;
-//        dest_rect.y = wallFragY;
-//        dest_rect.w = wallFragW;
-//        dest_rect.h = wallFragH;
-        
-//        this->textureRect(this->wallTexture, rect);
-//        SDL_RenderCopy(this->renderer, this->wallTexture, &src_rect, &dest_rect);
         fillRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShader(distance));
 //        drawRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShader(distance));
+
+        //SET OBJECT'S SURFACES WIREFRAME
         
-        //if still at the same wall object
-        if (lastMapYObjCrd == intercept.mapY && lastMapXObjCrd == intercept.mapX)
+        //if still at the same wall object keep scanning the surface
+        if (map_y_crd_last == intercept.mapY && map_x_crd_last == intercept.mapX)
         {
-            curQuadPoint.x2 = wallFragX;
-            curQuadPoint.y2 = wallFragY;
-            curQuadPoint.x3 = wallFragX;
-            curQuadPoint.y3 = wallFragY + wallFragH;
-        }
-        else //draw the surface
-        {
-            curQuadPoint.x2 = wallFragX;
-            curQuadPoint.x3 = wallFragX;
+            curQPoint.x2 = curQPoint.x3 = wallFragX;
+            curQPoint.y2 = wallFragY;
+            curQPoint.y3 = wallFragY + wallFragH;
             
-            if (debug)
+            if (intercept.isCorner)
             {
-                this->drawLine(curQuadPoint.x1, curQuadPoint.y1, curQuadPoint.x2, curQuadPoint.y2);
-                this->drawLine(curQuadPoint.x2, curQuadPoint.y2, curQuadPoint.x3, curQuadPoint.y3);
-                this->drawLine(curQuadPoint.x3, curQuadPoint.y3, curQuadPoint.x1, curQuadPoint.y4);
-                this->drawLine(curQuadPoint.x1, curQuadPoint.y4, curQuadPoint.x1, curQuadPoint.y1);
+                curQPoint.x2 = curQPoint.x3 = wallFragX;
+
+                surfacesPointsList.push_back(curQPoint);
+
+                //prepare new surface
+                curQPoint.x1 = curQPoint.x4 = wallFragX;
+                curQPoint.y1 = curQPoint.y2 = wallFragY;
+                curQPoint.y3 = curQPoint.y4 = wallFragY + wallFragH;
             }
+        }
+        else //if new obj scan started -- save the surface of the old one
+        {
+            curQPoint.x2 = curQPoint.x3 = wallFragX;
+            
+            surfacesPointsList.push_back(curQPoint);
             
             //prepare new surface
-            curQuadPoint.x1 = wallFragX;
-            curQuadPoint.y1 = wallFragY;
-            curQuadPoint.y2 = wallFragY;
-            curQuadPoint.y3 = wallFragY + wallFragH;
-            curQuadPoint.y4 = wallFragY + wallFragH;
-            curQuadPoint.x4 = wallFragX;
+            curQPoint.x1 = curQPoint.x4 = wallFragX;
+            curQPoint.y1 = curQPoint.y2 = wallFragY;
+            curQPoint.y3 = curQPoint.y4 = wallFragY + wallFragH;
         }
         
         rayIndex++;
-        lastMapXObjCrd = intercept.mapX;
-        lastMapYObjCrd = intercept.mapY;
+        map_x_crd_last = intercept.mapX;
+        map_y_crd_last = intercept.mapY;
     }
+    
+    //push the last one
+    surfacesPointsList.push_back(curQPoint);
     
     if (debug)
     {
-        this->drawLine(curQuadPoint.x1, curQuadPoint.y1, curQuadPoint.x2, curQuadPoint.y2);
-        this->drawLine(curQuadPoint.x2, curQuadPoint.y2, curQuadPoint.x3, curQuadPoint.y3);
-        this->drawLine(curQuadPoint.x3, curQuadPoint.y3, curQuadPoint.x1, curQuadPoint.y4);
-        this->drawLine(curQuadPoint.x1, curQuadPoint.y4, curQuadPoint.x1, curQuadPoint.y1);
+        drawQuadrangles(surfacesPointsList);
     }
+}
+
+void Renderer::drawQuadrangles(vector<Renderer::qpoint> points)
+{
+    for (Renderer::qpoint quadPoint : points) {
+        drawQuadrangle(quadPoint);
+    }
+}
+
+void Renderer::drawQuadrangle(qpoint points)
+{
+    this->drawLine(points.x1, points.y1, points.x2, points.y2);
+    this->drawLine(points.x2, points.y2, points.x3, points.y3);
+    this->drawLine(points.x3, points.y3, points.x1, points.y4);
+    this->drawLine(points.x1, points.y4, points.x1, points.y1);
 }
 
 Renderer::distanceShader Renderer::calcDistShader(float distance)
@@ -275,7 +307,31 @@ Renderer::distanceShader Renderer::calcDistShader(float distance)
     return distS;
 }
 
-void Renderer::textureRect(SDL_Texture *texture, SDL_Rect rect)
+void Renderer::drawText(const char* text, float x, float y, float w, float h, Uint8 r, Uint8 g, Uint8 b)
 {
-    SDL_RenderCopy(this->renderer, this->wallTexture, NULL, &rect);
+    TTF_Font* Sans = TTF_OpenFont("assets/font.ttf", 24);
+    if(!Sans)
+        printf("TTF_OpenFont: %s\n", TTF_GetError());
+    
+    SDL_Color color = {r, g, b};
+    SDL_Surface* surfaceMessage = TTF_RenderText_Solid(Sans, text, color);
+    
+    SDL_Texture* Message = SDL_CreateTextureFromSurface(this->renderer, surfaceMessage);
+    
+    SDL_Rect Message_rect;
+    Message_rect.x = x;
+    Message_rect.y = y;
+    Message_rect.w = w;
+    Message_rect.h = h;
+    
+    SDL_RenderCopy(this->renderer, Message, NULL, &Message_rect);
 }
+
+
+//image load and draw in rectangle
+//        if (this->wallTexture == nullptr)
+//        {
+//            SDL_Surface *image = IMG_Load("assets/img.jpg");
+//            this->wallTexture = SDL_CreateTextureFromSurface(this->renderer, image);
+//        }
+//        SDL_RenderCopy(this->renderer, this->wallTexture, &src_rect, &dest_rect);
