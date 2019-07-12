@@ -8,7 +8,6 @@
 
 #include "Game.hpp"
 
-#define RAYS_NUMBER 80
 #define PI 3.14159265
 
 using namespace std;
@@ -43,8 +42,9 @@ void Game::GameLoop()
     int fps = 1000 / 30;
     Uint32 startFrame;
     int frameTime;
-    
     int frameCount = 0;
+    
+    bool showMap = false;
     
     while (game_loop_running)
     {
@@ -60,6 +60,9 @@ void Game::GameLoop()
                 
                 if (event.key.keysym.sym == SDLK_d)
                     renderer->debug = !renderer->debug;
+                
+                if (event.key.keysym.sym == SDLK_m)
+                    showMap = !showMap;
                 
                 break;
             case SDL_QUIT:
@@ -85,12 +88,26 @@ void Game::GameLoop()
         collisionDetection(fOldPlayerX, fOldPlayerY);
         
         this->renderer->prepareRender();
+        this->renderer->globalObjectsRegister.clear();
         
-        this->renderer->drawMap(this->map->currentMap());
-        vector<Renderer::interceptions> intercepts = this->renderer->castRays(RAYS_NUMBER, fPlayerX, fPlayerY, fPlayerA, map->currentMap());
-        this->renderer->draw3dScene(intercepts);
+        this->renderer->mapRays.clear();
+        vector<Renderer::interceptions> interceptsTallObjects =
+            this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap());
+        
+        vector<Renderer::interceptions> interceptsLowObjects =
+            this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap(), '#');
+        
+        this->renderer->drawCeil();
+        this->renderer->drawFloor();
+        
+        this->renderer->RenderScene(interceptsTallObjects); //draw back objects
+        this->renderer->RenderScene(interceptsLowObjects); //draw front objects
+        
         if (renderer->debug)
             renderer->drawText("DEBUG: ON", renderer->screenW - 120, 5, 100, 24, 255, 0, 0);
+        
+        if (showMap)
+            this->renderer->drawMap(this->map->currentMap(), this->renderer->mapRays, fPlayerX, fPlayerY, fPlayerA, fMovDir);
         
         this->renderer->renderFrame();
         
@@ -117,14 +134,14 @@ void Game::collisionDetection(float fOldPlayerX, float fOldPlayerY)
     
     vector<string> map = this->map->currentMap();
     
-    if ((fPlayerX > fOldPlayerX && map[mapCoords.y][mapCoords.x+1] == '#') ||
-        (fPlayerX < fOldPlayerX && map[mapCoords.y][mapCoords.x-1] == '#'))
+    if ((fPlayerX > fOldPlayerX && (map[mapCoords.y][mapCoords.x+1] == '#' || map[mapCoords.y][mapCoords.x+1] == '*')) ||
+        (fPlayerX < fOldPlayerX && (map[mapCoords.y][mapCoords.x-1] == '#' || map[mapCoords.y][mapCoords.x-1] == '*')))
     {
         fPlayerX = fOldPlayerX;
     }
     
-    if ((fPlayerY > fOldPlayerY && map[mapCoords.y+1][mapCoords.x] == '#') ||
-        (fPlayerY < fOldPlayerY && map[mapCoords.y-1][mapCoords.x] == '#'))
+    if ((fPlayerY > fOldPlayerY && (map[mapCoords.y+1][mapCoords.x] == '#' || map[mapCoords.y+1][mapCoords.x] == '*')) ||
+        (fPlayerY < fOldPlayerY && (map[mapCoords.y-1][mapCoords.x] == '#' || map[mapCoords.y-1][mapCoords.x] == '*')))
     {
         fPlayerY = fOldPlayerY;
     }
@@ -143,11 +160,11 @@ void Game::handleMovement()
         strafeOn = true;
     
     if (keyState[SDL_SCANCODE_W])
-        fRunAcc = 1.0f;
+        fRunAcc = 2.0f;
     
     if (keyState[SDL_SCANCODE_LEFT])
     {
-        fRotDir = -(fRotAcc + fRunAcc / 24);
+        fRotDir = -(fRotAcc + (fRunAcc / 2) / 24);
         
         if (strafeOn)
         {
@@ -158,7 +175,7 @@ void Game::handleMovement()
     
     if (keyState[SDL_SCANCODE_RIGHT])
     {
-        fRotDir = fRotAcc + fRunAcc / 24;
+        fRotDir = fRotAcc + (fRunAcc / 2) / 24;
         
         if (strafeOn)
         {
