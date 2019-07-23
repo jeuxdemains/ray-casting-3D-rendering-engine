@@ -20,13 +20,14 @@
 #include <SDL2_ttf/SDL_ttf.h>
 
 #include "Map.hpp"
+#include "RendererHelperFunctions.hpp"
 
 using namespace std;
 
 class Renderer {
 private:
     SDL_Renderer* _renderer;
-    int _wallHFactor = 10;
+    int _wallBlockSize = 64;
     int _resolution_factor = 10;
     
     SDL_Texture* _wallTexture = nullptr;
@@ -48,36 +49,38 @@ public:
     int screenW, screenH;
     
     struct interceptions {
-        float x;
-        float y;
-        float xTo;
-        float yTo;
-        float distance;
+        double x;
+        double y;
+        double xTo;
+        double yTo;
+        double distance;
         int mapX;
         int mapY;
         bool isCorner;
-        float objX1, objX2, objY1, objY2;
-        float corner1Dist, corner2Dist, corner3Dist, corner4Dist;
+        double corner1Dist, corner2Dist, corner3Dist, corner4Dist;
         int objType;
         int rayIndex;
-        float rayAngle;
+        double rayAngle;
+        int objIndex;
+        double hitsXSide;
+        double hitsYSide;
     };
     
     struct objectInScreen {
-        float distance;
-        float rayAngle;
-        float objType;
+        double distance;
+        double rayAngle;
+        double objType;
     };
     
     struct qpoint {
-        float x1; float y1;
-        float x2; float y2;
-        float x3; float y3;
-        float x4; float y4;
+        double x1; double y1;
+        double x2; double y2;
+        double x3; double y3;
+        double x4; double y4;
     };
     
     struct linePoints {
-        float x, y, xTo, yTo, distance;
+        double x, y, xTo, yTo, distance;
         int rayIndex;
     };
     
@@ -91,23 +94,24 @@ public:
     void renderFrame();
     void prepareRender();
     
-    void drawMap(vector<string> map, vector<linePoints> mapRays, float fPlayerX, float fPlayerY, float fPlayerA, float fMovDir);
-    vector<interceptions> castRays(float x, float y, float angle, vector<string> map, const char scanChar = '*');
+    void drawMap(vector<string> map, vector<linePoints> mapRays, double fPlayerX, double fPlayerY, double fPlayerA, double fMovDir);
+    vector<interceptions> castRays(double x, double y, double angle, vector<string> map, const char scanChar = '*');
     void RenderScene(vector<interceptions> interceptions);
+    void TextureMap(SDL_Texture *texture,double srcX, double srcY, double srcW, double srcH, double destW, double destH, double destX, double destY);
     void drawCeil();
     void drawFloor();
     void drawQuadrangles(vector<qpoint> points);
     void drawQuadrangle(qpoint points);
     
     //primitives
-    void drawLine(float x, float y, float xTo, float yTo, int r = 255, int g = 255, int b = 255);
-    void fillRect(float x, float y, float w, float h, distanceShader shaderColor);
-    void drawRect(float x, float y, float w, float h, distanceShader shaderColor);
-    void drawText(const char* text, float x, float y, float w, float h, Uint8 r, Uint8 g, Uint8 b);
+    void drawLine(double x, double y, double xTo, double yTo, int r = 255, int g = 255, int b = 255);
+    void fillRect(double x, double y, double w, double h, distanceShader shaderColor);
+    void drawRect(double x, double y, double w, double h, distanceShader shaderColor);
+    void drawText(const char* text, double x, double y, double w, double h, Uint8 r, Uint8 g, Uint8 b);
     
     //coloring
-    distanceShader calcDistShaderGrayscale(float distance, int color = 255);
-    distanceShader calcDistShaderColor(float distance, int r, int g, int b, int a);
+    distanceShader calcDistShaderGrayscale(double distance, int color = 255);
+    distanceShader calcDistShaderColor(double distance, int r, int g, int b, int a);
 };
 
 
