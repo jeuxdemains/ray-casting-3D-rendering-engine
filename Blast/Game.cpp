@@ -94,14 +94,14 @@ void Game::GameLoop()
         vector<Renderer::interceptions> interceptsTallObjects =
             this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap());
         
-//        vector<Renderer::interceptions> interceptsLowObjects =
-//            this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap(), '#');
+        vector<Renderer::interceptions> interceptsLowObjects =
+            this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap(), '#');
         
         this->renderer->drawCeil();
         this->renderer->drawFloor();
         
         this->renderer->RenderScene(interceptsTallObjects); //draw back objects
-//        this->renderer->RenderScene(interceptsLowObjects); //draw front objects
+        this->renderer->RenderScene(interceptsLowObjects); //draw front objects
         
         if (renderer->debug)
             renderer->drawText("DEBUG: ON", renderer->screenW - 120, 5, 100, 24, 255, 0, 0);

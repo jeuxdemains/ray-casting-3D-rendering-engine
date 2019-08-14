@@ -16,7 +16,10 @@ class RendererHelperFunctions
 {
 public:
     float objDistFromCamera(double x, double xTo, double y, double yTo, double angle);
-    bool isRayHitsCorner(float mapPosX, float mapPosY, float mapPosX2, float mapPosY2, float rayXTo, float rayYTo);
+    bool isRayHitsCorner(float mapPosX, float mapPosY,
+                         float mapPosX2, float mapPosY2,
+                         float rayX, float rayY,
+                         float rayXTo, float rayYTo);
 };
 
 

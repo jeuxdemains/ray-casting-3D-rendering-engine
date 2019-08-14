@@ -27,6 +27,8 @@ Renderer::Renderer(int winW, int winH, SDL_Renderer *renderer)
     _floorTexture = SDL_CreateTextureFromSurface(_renderer, image);
     image = IMG_Load("assets/bricks.png");
     _wallTexture = SDL_CreateTextureFromSurface(_renderer, image);
+    image = IMG_Load("assets/box2.jpg");
+    _boxTexture = SDL_CreateTextureFromSurface(_renderer, image);
     
     _font = TTF_OpenFont("assets/font.ttf", 24);
     if(!_font)
@@ -54,8 +56,8 @@ void Renderer::drawMap(vector<string> map, vector<linePoints> mapRays, double fP
 {
     Map *classMap = new Map();
     
-    double mapBlockSizeW = (double)classMap->fMapHudSizeW / map[0].size();
-    double mapBlockSizeH = (double)classMap->fMapHudSizeH / map.size();
+    float mapBlockSizeW = classMap->fMapBlockW; //classMap->fMapHudSizeW / map[0].size();
+    float mapBlockSizeH = classMap->fMapBlockH; //classMap->fMapHudSizeH / map.size();
     
     for (int mapY = 0; mapY < map.size(); mapY++) {
         for (int mapX = 0; mapX < map[mapY].size(); mapX++) {
@@ -65,7 +67,7 @@ void Renderer::drawMap(vector<string> map, vector<linePoints> mapRays, double fP
             {
                 distanceShader distShader;
                 distShader.r = distShader.g = distShader.b = distShader.a = 255;
-                this->fillRect(mapX * mapBlockSizeW, mapY * mapBlockSizeH, mapBlockSizeW + 1, mapBlockSizeH, distShader);
+                this->fillRect(mapX * mapBlockSizeW, mapY * mapBlockSizeH, mapBlockSizeW + 1, mapBlockSizeH + 1, distShader);
             }
             
             if (map[mapY][mapX] == '.')
@@ -73,7 +75,7 @@ void Renderer::drawMap(vector<string> map, vector<linePoints> mapRays, double fP
                 distanceShader distShader;
                 distShader.r = distShader.g = distShader.b = 0;
                 distShader.a = 255;
-                this->fillRect(mapX * mapBlockSizeW, mapY * mapBlockSizeH, mapBlockSizeW + 1, mapBlockSizeH, distShader);
+                this->fillRect(mapX * mapBlockSizeW, mapY * mapBlockSizeH, mapBlockSizeW + 1, mapBlockSizeH + 1, distShader);
             }
         }
     }
@@ -107,21 +109,22 @@ void Renderer::drawMap(vector<string> map, vector<linePoints> mapRays, double fP
 vector<Renderer::interceptions> Renderer::castRays(double x, double y, double angle, vector<string> map, const char scanChar)
 {
     Map *classMap = new Map();
-    double mapBlockSizeW = (double)classMap->fMapBlockW;
-    double mapBlockSizeH = (double)classMap->fMapBlockH;
+    float mapBlockSizeW = classMap->fMapBlockW;
+    float mapBlockSizeH = classMap->fMapBlockH;
     
     RendererHelperFunctions *renderHelper = new RendererHelperFunctions();
     
     double FOV = 60 / (360 / PI);
-    
+
     x += mapBlockSizeW / 2;
     y += mapBlockSizeH / 2;
+    
     double xTo = x;
     double yTo = y;
 
     double stepInc = 0.2f;
-    int mapX = 0;
-    int mapY = 0;
+    double mapX = 0;
+    double mapY = 0;
     
     vector<Renderer::interceptions> interceptions;
     
@@ -130,9 +133,10 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
     double angleDelta = -FOV/2;
     int scanField = this->screenW / _resolution_factor;
     
-    int objIndex = 0;
     int lastObjX = 0;
     int lastObjY = 0;
+    int lastCornerX = 0;
+    int lastCornerY = 0;
     
     for (int screenX = 0; screenX <= scanField; screenX++) {
         
@@ -145,14 +149,14 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
         //extend ray till collision
         while (!collision)
         {
-            mapX = floor(xTo / mapBlockSizeW);
-            mapY = floor(yTo / mapBlockSizeH);
+            mapX = int(xTo / mapBlockSizeW);
+            mapY = int(yTo / mapBlockSizeH);
             
             //default scanChar = '*'
             if (map[mapY][mapX] == scanChar)
             {
                 int objType = 1;
-                
+            
                 double totalDist = renderHelper->objDistFromCamera(x, xTo, y, yTo, angle);
                 
                 bool isCorner =
@@ -160,8 +164,17 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
                                               mapY * mapBlockSizeH,
                                               (mapX+1) * mapBlockSizeW,
                                               (mapY+1) * mapBlockSizeH,
+                                              x, y,
                                               xTo, yTo);
             
+                
+//                if (isCorner && round(xTo) == lastCornerX && round(yTo) == lastCornerY)
+//                {
+//                    isCorner = false;
+//                }
+                
+                lastCornerX = round(xTo);
+                lastCornerY = round(yTo);
                 
                 if (map[mapY][mapX] == '#')
                 {   //if object already registered in the global register then skip it
@@ -177,19 +190,6 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
                     objType = 0;
                 }
                 
-                if (mapX != lastObjX || mapY != lastObjY)
-                    objIndex++;
-            
-                
-                bool rayDirRight = false;
-                if (x < xTo)
-                    rayDirRight = true;
-                
-                bool rayDirDown = false;
-                if (y < yTo)
-                    rayDirDown = true;
-                
-                
                 Renderer::interceptions intercepts;
                 intercepts.x = x;
                 intercepts.y = y;
@@ -202,9 +202,6 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
                 intercepts.objType = objType;
                 intercepts.rayIndex = screenColumn;
                 intercepts.rayAngle = angle + angleDelta;
-                intercepts.objIndex = objIndex;
-                intercepts.hitsXSide = xTo - mapX * mapBlockSizeW;
-                intercepts.hitsYSide = yTo - mapY * mapBlockSizeH;
                 
                 interceptions.push_back(intercepts);
                 
@@ -225,10 +222,10 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
             yTo += stepInc * sinf(angle + angleDelta);
             
             //if the ray goes outside the map -> register out of bounds hit
-            if (round(xTo) / mapBlockSizeW >= map[0].size() ||
-                round(yTo) / mapBlockSizeH >= map.size()||
-                round(yTo) / mapBlockSizeH <= 0 ||
-                round(xTo) / mapBlockSizeW <= 0)
+            if (ceil(xTo) / mapBlockSizeW >= map[0].size() ||
+                ceil(yTo) / mapBlockSizeH >= map.size() ||
+                floor(yTo) / mapBlockSizeH <= 0 ||
+                floor(xTo) / mapBlockSizeW <= 0)
             {
 
                 Renderer::interceptions intercepts;
@@ -293,6 +290,7 @@ void Renderer::fillRect(double x, double y, double w, double h, distanceShader s
     rect.w = w;
     rect.h = h;
     
+    SDL_SetRenderDrawBlendMode(_renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(_renderer, shaderColor.r,shaderColor.g,shaderColor.b, shaderColor.a);
     SDL_RenderFillRect(_renderer, &rect);
 }
@@ -316,10 +314,11 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
     
     bool initNewObject = true;
     
-    Map *classMap = new Map();
-    
     Renderer::qpoint curQPoint;
     vector<Renderer::qpoint> surfacesPointsList;
+
+    wallSliceStruct wallSlice;
+    vector<wallSliceStruct> wallSlices;
     
     for (Renderer::interceptions intercept : interceptions)
     {
@@ -343,9 +342,44 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
             wallFragY -= wallFragH / 2;
         }
         
-        fillRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShaderGrayscale(intercept.distance));
-        
+//        fillRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShaderGrayscale(intercept.distance));
 //        drawRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShaderGrayscale(intercept.distance));
+        
+        int mapX_screen_to = (intercept.mapX + 1) * _wallBlockSize;
+        int mapX_screen_from = mapX_screen_to - _wallBlockSize;
+        
+        int mapY_screen_to = (intercept.mapY + 1) * _wallBlockSize;
+        int mapY_screen_from = mapY_screen_to - _wallBlockSize;
+        
+        int xto_screen = intercept.xTo * 10;
+        int yto_screen = intercept.yTo * 10;
+        
+        int wallOffset = 0;
+        
+        if (yto_screen + 5 >= mapY_screen_to)
+            wallOffset = mapX_screen_to - xto_screen;
+        if (mapY_screen_from >= yto_screen - 4)
+            wallOffset = 1 + xto_screen - mapX_screen_from;
+        
+        if (mapX_screen_from >= xto_screen - 4)
+            wallOffset = mapY_screen_to - yto_screen;
+        if (mapX_screen_to <= xto_screen + 5)
+            wallOffset = 1 + yto_screen - mapY_screen_from;
+
+
+        if (intercept.objType == 0)
+        cout
+        << "mapX coord: " << intercept.mapX + 1
+        << " | mapX_screen_from: " << mapX_screen_from
+        << " | mapX_screen_to: " << mapX_screen_to
+        << " | xTo: " << xto_screen + 1 << endl
+        << "mapY coord: " << intercept.mapY + 1
+        << " | mapY_screen_from: " << mapY_screen_from
+        << " | mapY_screen_to: " << mapY_screen_to
+        << " | yTo: " << yto_screen + 1 << endl
+        << " wallOffset: " << wallOffset << endl
+        << "-----------------------------"
+        << endl;
 
         //SET OBJECT'S SURFACES WIREFRAME
         if (initNewObject)
@@ -354,6 +388,19 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
             curQPoint.y1 = curQPoint.y2 = wallFragY;
             curQPoint.y3 = curQPoint.y4 = wallFragY + wallFragH;
             initNewObject = false;
+            
+            wallSlices.clear();
+            
+            wallSlice.x = wallFragX;
+            wallSlice.y = wallFragY;
+            wallSlice.w = wallFragW;
+            wallSlice.h = wallFragH;
+            wallSlice.distance = intercept.distance;
+            wallSlice.objType = intercept.objType;
+            wallSlice.texOffset = wallOffset;
+            
+            wallSlices.push_back(wallSlice);
+            
         }
 
         //if still at the same wall object keep scanning the surface
@@ -362,44 +409,39 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
             curQPoint.x2 = curQPoint.x3 = wallFragX;
             curQPoint.y2 = wallFragY;
             curQPoint.y3 = wallFragY + wallFragH;
+            
+            wallSlice.x = wallFragX;
+            wallSlice.y = wallFragY;
+            wallSlice.w = wallFragW;
+            wallSlice.h = wallFragH;
+            wallSlice.distance = intercept.distance;
+            wallSlice.objType = intercept.objType;
+            wallSlice.texOffset = wallOffset;
+            
+            wallSlices.push_back(wallSlice);
 
-//            if (intercept.isCorner)
-//            {
-//                goto save_surface;
-//            }
+            if (intercept.isCorner)
+            {
+                goto render_wall;
+            }
         }
         else //save the surface and rise the flag to start new object wireframe in the next run
         {
+        render_wall:
+            //---------
+            wallSlice.x = wallFragX;
+            wallSlice.y = wallFragY;
+            wallSlice.w = wallFragW;
+            wallSlice.h = wallFragH;
+            wallSlice.distance = intercept.distance;
+            wallSlice.objType = intercept.objType;
+            wallSlice.texOffset = wallOffset;
             
-            double wallW = _wallBlockSize / (intercept.distance / this->screenW * 4);
-            double wallH = _wallBlockSize / (intercept.distance / this->screenH * 4);
-            double wallX = intercept.rayIndex * (this->screenW / (interceptions.size() - 1));
-            double wallY = (this->screenH - wallH) / 2;
+            wallSlices.push_back(wallSlice);
             
-            if (intercept.objType == 1)
-            {
-                wallH *= 2;
-                wallY -= wallH / 2;
-            }
+            DrawWallTexture(wallSlices);
+            //---------
             
-            struct mapBlock
-            {
-                double x, y, x2, y2;
-            };
-            
-            mapBlock mp;
-            mp.x = interceptions[0].mapX * classMap->fMapBlockW;
-            mp.y = interceptions[0].mapY * classMap->fMapBlockH;
-            mp.x2 = interceptions[0].mapX * classMap->fMapBlockW + classMap->fMapBlockW;
-            mp.y2 = interceptions[0].mapY * classMap->fMapBlockH + classMap->fMapBlockH;
-            
-//            cout << "MAP X1 " << mp.x << " MAP X2 " << mp.x2 << " MAP Y1 " << mp.y << " MAP Y2 " << mp.y2 << endl;
-//            cout << "X " << interceptions[0].xTo << " Y " << interceptions[0].yTo << endl;
-//            cout << "xSide val: " << interceptions[0].hitsXSide << " ySide val: " << interceptions[0].hitsYSide << endl;
-            
-//            drawLine(wallX, wallY, wallX+wallW, wallY, 255,0,0);
-            
-        save_surface:
             curQPoint.x2 = curQPoint.x3 = wallFragX;
             surfacesPointsList.push_back(curQPoint);
 
@@ -408,11 +450,12 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
         
         map_x_crd_last = intercept.mapX;
         map_y_crd_last = intercept.mapY;
-        
     }
     
     //push the last one
     surfacesPointsList.push_back(curQPoint);
+    
+    DrawWallTexture(wallSlices);
     
     if (debug)
     {
@@ -420,7 +463,48 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
     }
 }
 
-void Renderer::TextureMap(SDL_Texture *texture, double srcX, double srcY, double srcW, double srcH, double destW, double destH, double destX, double destY)
+void Renderer::DrawWallTexture(vector<wallSliceStruct> wallSlices)
+{
+    if (wallSlices.size() == 0)
+        return;
+    
+    int texSliceW = _wallBlockSize;
+    SDL_Texture* texture = nullptr;
+    
+    switch (wallSlices[0].objType) {
+        case 0:
+            texture = _boxTexture;
+            break;
+        case 1:
+        default:
+            texture = _wallTexture;
+            break;
+    }
+    
+    if (wallSlices.size() > 1)
+        texSliceW = _wallBlockSize / wallSlices.size() + 1;
+    
+    for (wallSliceStruct ws : wallSlices)
+    {
+        TextureMap(texture,
+                   _wallBlockSize - ws.texOffset, 0,
+                   texSliceW, _wallBlockSize,
+                   ws.w, ws.h,
+                   ws.x, ws.y);
+        
+        //shade
+        distanceShader ds;
+        ds.r = ds.g = ds.b = 0;
+        ds.a = (ws.distance > 240) ? 240 : ws.distance;
+        fillRect(ws.x, ws.y, ws.w, ws.h, ds);
+    }
+}
+
+void Renderer::TextureMap(SDL_Texture *texture,
+                          double srcX, double srcY,
+                          double srcW, double srcH,
+                          double destW, double destH,
+                          double destX, double destY)
 {
     SDL_Rect srcRect;
     srcRect.x = srcX;

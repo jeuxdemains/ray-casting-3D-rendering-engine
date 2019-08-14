@@ -31,6 +31,8 @@ private:
     int _resolution_factor = 10;
     
     SDL_Texture* _wallTexture = nullptr;
+    SDL_Texture* _boxTexture = nullptr;
+    
     SDL_Texture* _ceilTexture = nullptr;
     SDL_Texture* _floorTexture = nullptr;
     
@@ -57,13 +59,17 @@ public:
         int mapX;
         int mapY;
         bool isCorner;
-        double corner1Dist, corner2Dist, corner3Dist, corner4Dist;
         int objType;
         int rayIndex;
         double rayAngle;
-        int objIndex;
-        double hitsXSide;
-        double hitsYSide;
+    };
+    
+    struct wallSliceStruct
+    {
+        float x,y,w,h;
+        float texOffset;
+        int objType;
+        double distance;
     };
     
     struct objectInScreen {
@@ -102,6 +108,7 @@ public:
     void drawFloor();
     void drawQuadrangles(vector<qpoint> points);
     void drawQuadrangle(qpoint points);
+    void DrawWallTexture(vector<wallSliceStruct> wallSlices);
     
     //primitives
     void drawLine(double x, double y, double xTo, double yTo, int r = 255, int g = 255, int b = 255);
