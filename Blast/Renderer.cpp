@@ -25,7 +25,7 @@ Renderer::Renderer(int winW, int winH, SDL_Renderer *renderer)
     _ceilTexture = SDL_CreateTextureFromSurface(_renderer, image);
     image = IMG_Load("assets/floor.jpg");
     _floorTexture = SDL_CreateTextureFromSurface(_renderer, image);
-    image = IMG_Load("assets/bricks.png");
+    image = IMG_Load("assets/bricks2.jpg");
     _wallTexture = SDL_CreateTextureFromSurface(_renderer, image);
     image = IMG_Load("assets/box2.jpg");
     _boxTexture = SDL_CreateTextureFromSurface(_renderer, image);
@@ -122,7 +122,7 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
     double xTo = x;
     double yTo = y;
 
-    double stepInc = 0.2f;
+    const double D_STEP_INC = 0.2f;
     double mapX = 0;
     double mapY = 0;
     
@@ -132,11 +132,6 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
     
     double angleDelta = -FOV/2;
     int scanField = this->screenW / _resolution_factor;
-    
-    int lastObjX = 0;
-    int lastObjY = 0;
-    int lastCornerX = 0;
-    int lastCornerY = 0;
     
     for (int screenX = 0; screenX <= scanField; screenX++) {
         
@@ -158,23 +153,6 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
                 int objType = 1;
             
                 double totalDist = renderHelper->objDistFromCamera(x, xTo, y, yTo, angle);
-                
-                bool isCorner =
-                renderHelper->isRayHitsCorner(mapX * mapBlockSizeW,
-                                              mapY * mapBlockSizeH,
-                                              (mapX+1) * mapBlockSizeW,
-                                              (mapY+1) * mapBlockSizeH,
-                                              x, y,
-                                              xTo, yTo);
-            
-                
-//                if (isCorner && round(xTo) == lastCornerX && round(yTo) == lastCornerY)
-//                {
-//                    isCorner = false;
-//                }
-                
-                lastCornerX = round(xTo);
-                lastCornerY = round(yTo);
                 
                 if (map[mapY][mapX] == '#')
                 {   //if object already registered in the global register then skip it
@@ -198,7 +176,6 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
                 intercepts.distance = totalDist;
                 intercepts.mapX = mapX;
                 intercepts.mapY = mapY;
-                intercepts.isCorner = isCorner;
                 intercepts.objType = objType;
                 intercepts.rayIndex = screenColumn;
                 intercepts.rayAngle = angle + angleDelta;
@@ -218,8 +195,8 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
             
         skip_object:
             
-            xTo += stepInc * cosf(angle + angleDelta);
-            yTo += stepInc * sinf(angle + angleDelta);
+            xTo += D_STEP_INC * cosf(angle + angleDelta);
+            yTo += D_STEP_INC * sinf(angle + angleDelta);
             
             //if the ray goes outside the map -> register out of bounds hit
             if (ceil(xTo) / mapBlockSizeW >= map[0].size() ||
@@ -263,9 +240,6 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
         {
             mapRays.push_back(lPoints);
         }
-        
-        lastObjX = mapX;
-        lastObjY = mapY;
     }
     
     return interceptions;
@@ -309,28 +283,18 @@ void Renderer::drawRect(double x, double y, double w, double h, distanceShader s
 
 void Renderer::RenderScene(vector<interceptions> interceptions)
 {
-    int map_x_crd_last = 0;
-    int map_y_crd_last = 0;
-    
-    bool initNewObject = true;
-    
-    Renderer::qpoint curQPoint;
-    vector<Renderer::qpoint> surfacesPointsList;
 
     wallSliceStruct wallSlice;
     vector<wallSliceStruct> wallSlices;
     
+    int last_mapX = -1;
+    int last_mapY = -1;
+    
     for (Renderer::interceptions intercept : interceptions)
     {
-        if (intercept.distance == -1)
-        {
-            initNewObject = true;
-            continue;
-        }
-        
         double wallFragH = _wallBlockSize / ((intercept.distance / screenH / 2) * _resolution_factor);
-        if (wallFragH < 40)
-            wallFragH = 40;
+        if (wallFragH < 20)
+            wallFragH = 20;
         
         double wallFragY = (this->screenH - wallFragH) / 2;
         double wallFragW = (this->screenW / _wallBlockSize);
@@ -345,133 +309,102 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
 //        fillRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShaderGrayscale(intercept.distance));
 //        drawRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShaderGrayscale(intercept.distance));
         
-        int mapX_screen_to = (intercept.mapX + 1) * _wallBlockSize;
-        int mapX_screen_from = mapX_screen_to - _wallBlockSize;
+        bool isNewBlock = (last_mapX != intercept.mapX || last_mapY != intercept.mapY);
+        bool isFirstBlock = (last_mapX == -1 || last_mapY == -1);
         
-        int mapY_screen_to = (intercept.mapY + 1) * _wallBlockSize;
-        int mapY_screen_from = mapY_screen_to - _wallBlockSize;
-        
-        int xto_screen = intercept.xTo * 10;
-        int yto_screen = intercept.yTo * 10;
-        
-        int wallOffset = 0;
-        
-        if (yto_screen + 5 >= mapY_screen_to)
-            wallOffset = mapX_screen_to - xto_screen;
-        if (mapY_screen_from >= yto_screen - 4)
-            wallOffset = 1 + xto_screen - mapX_screen_from;
-        
-        if (mapX_screen_from >= xto_screen - 4)
-            wallOffset = mapY_screen_to - yto_screen;
-        if (mapX_screen_to <= xto_screen + 5)
-            wallOffset = 1 + yto_screen - mapY_screen_from;
-
-
-        if (intercept.objType == 0)
-        cout
-        << "mapX coord: " << intercept.mapX + 1
-        << " | mapX_screen_from: " << mapX_screen_from
-        << " | mapX_screen_to: " << mapX_screen_to
-        << " | xTo: " << xto_screen + 1 << endl
-        << "mapY coord: " << intercept.mapY + 1
-        << " | mapY_screen_from: " << mapY_screen_from
-        << " | mapY_screen_to: " << mapY_screen_to
-        << " | yTo: " << yto_screen + 1 << endl
-        << " wallOffset: " << wallOffset << endl
-        << "-----------------------------"
-        << endl;
-
-        //SET OBJECT'S SURFACES WIREFRAME
-        if (initNewObject)
+        if (isNewBlock || isFirstBlock)
         {
-            curQPoint.x1 = curQPoint.x4 = wallFragX;
-            curQPoint.y1 = curQPoint.y2 = wallFragY;
-            curQPoint.y3 = curQPoint.y4 = wallFragY + wallFragH;
-            initNewObject = false;
+            if (wallSlices.size() > 0)
+            {
+                DrawWallTexture(wallSlices);
+            }
             
             wallSlices.clear();
-            
-            wallSlice.x = wallFragX;
-            wallSlice.y = wallFragY;
-            wallSlice.w = wallFragW;
-            wallSlice.h = wallFragH;
-            wallSlice.distance = intercept.distance;
-            wallSlice.objType = intercept.objType;
-            wallSlice.texOffset = wallOffset;
-            
-            wallSlices.push_back(wallSlice);
-            
-        }
-
-        //if still at the same wall object keep scanning the surface
-        if (map_y_crd_last == intercept.mapY && map_x_crd_last == intercept.mapX)
-        {
-            curQPoint.x2 = curQPoint.x3 = wallFragX;
-            curQPoint.y2 = wallFragY;
-            curQPoint.y3 = wallFragY + wallFragH;
-            
-            wallSlice.x = wallFragX;
-            wallSlice.y = wallFragY;
-            wallSlice.w = wallFragW;
-            wallSlice.h = wallFragH;
-            wallSlice.distance = intercept.distance;
-            wallSlice.objType = intercept.objType;
-            wallSlice.texOffset = wallOffset;
-            
-            wallSlices.push_back(wallSlice);
-
-            if (intercept.isCorner)
-            {
-                goto render_wall;
-            }
-        }
-        else //save the surface and rise the flag to start new object wireframe in the next run
-        {
-        render_wall:
-            //---------
-            wallSlice.x = wallFragX;
-            wallSlice.y = wallFragY;
-            wallSlice.w = wallFragW;
-            wallSlice.h = wallFragH;
-            wallSlice.distance = intercept.distance;
-            wallSlice.objType = intercept.objType;
-            wallSlice.texOffset = wallOffset;
-            
-            wallSlices.push_back(wallSlice);
-            
-            DrawWallTexture(wallSlices);
-            //---------
-            
-            curQPoint.x2 = curQPoint.x3 = wallFragX;
-            surfacesPointsList.push_back(curQPoint);
-
-            initNewObject = true;
         }
         
-        map_x_crd_last = intercept.mapX;
-        map_y_crd_last = intercept.mapY;
+        int wallOffset = CalcTextureOffset(intercept.mapX, intercept.mapY, intercept.xTo, intercept.yTo);
+        
+        wallSlice.x = wallFragX;
+        wallSlice.y = wallFragY;
+        wallSlice.w = wallFragW;
+        wallSlice.h = wallFragH;
+        wallSlice.distance = intercept.distance;
+        wallSlice.objType = intercept.objType;
+        wallSlice.texOffset = wallOffset;
+        
+        wallSlices.push_back(wallSlice);
+
+        last_mapX = intercept.mapX;
+        last_mapY = intercept.mapY;
     }
-    
-    //push the last one
-    surfacesPointsList.push_back(curQPoint);
     
     DrawWallTexture(wallSlices);
+
+}
+
+int Renderer::CalcTextureOffset(int mapX, int mapY, double xTo, double yTo)
+{
+    int mapX_screen_to = (mapX + 1) * _wallBlockSize;
+    int mapX_screen_from = mapX_screen_to - _wallBlockSize;
     
-    if (debug)
-    {
-        drawQuadrangles(surfacesPointsList);
-    }
+    int mapY_screen_to = (mapY + 1) * _wallBlockSize;
+    int mapY_screen_from = mapY_screen_to - _wallBlockSize;
+    
+    int xto_screen = xTo * 10;
+    int yto_screen = yTo * 10;
+
+    int wallOffset = 64;
+    int compensator = 4;
+
+    if (yto_screen + compensator >= mapY_screen_to)
+        wallOffset = mapX_screen_to - xto_screen;
+    if (mapY_screen_from >= yto_screen - compensator)
+        wallOffset = xto_screen - mapX_screen_from;
+
+    if (mapX_screen_from >= xto_screen - compensator)
+        wallOffset = mapY_screen_to - yto_screen;
+    if (mapX_screen_to <= xto_screen + compensator)
+        wallOffset = yto_screen - mapY_screen_from;
+    
+    if (wallOffset < 1)
+        wallOffset = 1;
+    
+    return wallOffset;
 }
 
 void Renderer::DrawWallTexture(vector<wallSliceStruct> wallSlices)
 {
-    if (wallSlices.size() == 0)
-        return;
+    const int MAX_SHADE = 180;
+    int texSliceW = _wallBlockSize / wallSlices.size();
     
-    int texSliceW = _wallBlockSize;
+    for (wallSliceStruct ws : wallSlices)
+    {
+        if (texSliceW < 1)
+        {
+            texSliceW = 1;
+        }
+        
+        cout << "texSliceW: " << texSliceW << " texOffset: " << ws.texOffset << endl;
+    
+        TextureMap(TextureById(ws.objType),
+                   _wallBlockSize - ws.texOffset, 0,
+                   texSliceW, _wallBlockSize,
+                   ws.w, ws.h,
+                   ws.x, ws.y);
+        
+        //shade
+        distanceShader ds;
+        ds.r = ds.g = ds.b = 0;
+        ds.a = (ws.distance / 1.5f > MAX_SHADE) ? MAX_SHADE : ws.distance / 1.5f ;
+        fillRect(ws.x, ws.y, ws.w, ws.h, ds);
+    }
+}
+
+SDL_Texture* Renderer::TextureById(int objType)
+{
     SDL_Texture* texture = nullptr;
     
-    switch (wallSlices[0].objType) {
+    switch (objType) {
         case 0:
             texture = _boxTexture;
             break;
@@ -481,23 +414,7 @@ void Renderer::DrawWallTexture(vector<wallSliceStruct> wallSlices)
             break;
     }
     
-    if (wallSlices.size() > 1)
-        texSliceW = _wallBlockSize / wallSlices.size() + 1;
-    
-    for (wallSliceStruct ws : wallSlices)
-    {
-        TextureMap(texture,
-                   _wallBlockSize - ws.texOffset, 0,
-                   texSliceW, _wallBlockSize,
-                   ws.w, ws.h,
-                   ws.x, ws.y);
-        
-        //shade
-        distanceShader ds;
-        ds.r = ds.g = ds.b = 0;
-        ds.a = (ws.distance > 240) ? 240 : ws.distance;
-        fillRect(ws.x, ws.y, ws.w, ws.h, ds);
-    }
+    return texture;
 }
 
 void Renderer::TextureMap(SDL_Texture *texture,
@@ -613,12 +530,3 @@ void Renderer::drawText(const char* text, double x, double y, double w, double h
     
     SDL_RenderCopy(_renderer, Message, NULL, &Message_rect);
 }
-
-
-//image load and draw in rectangle
-//        if (this->wallTexture == nullptr)
-//        {
-//            SDL_Surface *image = IMG_Load("assets/img.jpg");
-//            this->wallTexture = SDL_CreateTextureFromSurface(_renderer, image);
-//        }
-//        SDL_RenderCopy(_renderer, this->wallTexture, &src_rect, &dest_rect);

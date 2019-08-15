@@ -18,30 +18,3 @@ float RendererHelperFunctions::objDistFromCamera(double x, double xTo, double y,
     return totalDist;
 };
 
-bool RendererHelperFunctions::isRayHitsCorner(float mapPosX, float mapPosY,
-                                              float mapPosX2, float mapPosY2,
-                                              float rayX, float rayY,
-                                              float rayXTo, float rayYTo)
-{
-    
-//    if (rayX < rayXTo)
-//        rayXTo = floor(rayXTo);
-//    else
-//        rayXTo = ceil(rayXTo);
-//    
-//    
-//    if (rayY < rayYTo)
-//        rayYTo = floor(rayYTo);
-//    else
-//        rayYTo = ceil(rayYTo);
-    
-    if ((mapPosX == rayXTo || mapPosX2 == rayXTo) &&
-        (mapPosY == rayYTo || mapPosY2 == rayYTo))
-    {
-        return true;
-    }
-    
-    return false;
-};
-
-

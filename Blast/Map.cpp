@@ -30,8 +30,8 @@ Map::MapCoords Map::posToCrd(float x, float y)
 {
     Map::MapCoords nMapXYCoords;
     
-    nMapXYCoords.x = floor(x / this->fMapBlockW);
-    nMapXYCoords.y = floor(y / this->fMapBlockH);
+    nMapXYCoords.x = int(x / this->fMapBlockW);
+    nMapXYCoords.y = int(y / this->fMapBlockH);
     
     return nMapXYCoords;
 }

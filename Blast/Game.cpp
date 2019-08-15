@@ -132,6 +132,7 @@ void Game::collisionDetection(float fOldPlayerX, float fOldPlayerY)
 {
     float cameraXDist = map->fMapBlockW / 2;
     float cameraYDist = map->fMapBlockH / 2;
+
     
     Map::MapCoords mapCoords = map->posToCrd(fPlayerX + cameraXDist, fPlayerY + cameraYDist);
     

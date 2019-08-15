@@ -58,7 +58,6 @@ public:
         double distance;
         int mapX;
         int mapY;
-        bool isCorner;
         int objType;
         int rayIndex;
         double rayAngle;
@@ -109,6 +108,8 @@ public:
     void drawQuadrangles(vector<qpoint> points);
     void drawQuadrangle(qpoint points);
     void DrawWallTexture(vector<wallSliceStruct> wallSlices);
+    SDL_Texture* TextureById(int objType);
+    int CalcTextureOffset(int mapX, int mapY, double xTo, double yTo);
     
     //primitives
     void drawLine(double x, double y, double xTo, double yTo, int r = 255, int g = 255, int b = 255);
