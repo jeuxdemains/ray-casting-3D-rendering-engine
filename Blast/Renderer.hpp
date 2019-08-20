@@ -27,8 +27,8 @@ using namespace std;
 class Renderer {
 private:
     SDL_Renderer* _renderer;
-    int _wallBlockSize = 64;
-    int _resolution_factor = 10;
+    float _wallBlockSize = 64.0f;
+    int _resolution_factor = 2; //12.0f;
     
     SDL_Texture* _wallTexture = nullptr;
     SDL_Texture* _boxTexture = nullptr;
@@ -65,8 +65,8 @@ public:
     
     struct wallSliceStruct
     {
-        float x,y,w,h;
-        float texOffset;
+        double x,y,w,h;
+        double texOffset;
         int objType;
         double distance;
     };
@@ -109,7 +109,7 @@ public:
     void drawQuadrangle(qpoint points);
     void DrawWallTexture(vector<wallSliceStruct> wallSlices);
     SDL_Texture* TextureById(int objType);
-    int CalcTextureOffset(int mapX, int mapY, double xTo, double yTo);
+    double CalcTextureOffset(int mapX, int mapY, double xTo, double yTo);
     
     //primitives
     void drawLine(double x, double y, double xTo, double yTo, int r = 255, int g = 255, int b = 255);

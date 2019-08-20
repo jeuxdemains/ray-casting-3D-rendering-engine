@@ -6,8 +6,8 @@
 //  Copyright © 2019 Yuriy Georgiev. All rights reserved.
 //
 
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 600
+#define SCREEN_WIDTH 960
+#define SCREEN_HEIGHT 720
 
 #include <iostream>
 #include "Game.hpp"

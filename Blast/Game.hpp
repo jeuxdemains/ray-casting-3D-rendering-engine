@@ -32,6 +32,7 @@ public:
     void GameLoop();
     void collisionDetection(float fOldPlayerX, float fOldPlayerY);
     void handleMovement();
+    void DebugInfo();
     
     Renderer *renderer = nullptr;
     Map *map = nullptr;
