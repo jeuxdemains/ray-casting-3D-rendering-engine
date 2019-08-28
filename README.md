@@ -11,4 +11,5 @@ It's work in progress so this readme may become obsolete at some point.
 ![raycasting gif](https://user-images.githubusercontent.com/7083803/60018590-72fcb100-9694-11e9-82b7-79c8b86d617a.gif)
 
 Texture Mapping
+
 ![texturemapping](https://user-images.githubusercontent.com/7083803/63848144-f047e900-c997-11e9-895e-3cfc2faf414c.gif)
