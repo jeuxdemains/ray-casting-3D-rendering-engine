@@ -56,8 +56,8 @@ void Renderer::drawMap(vector<string> map, vector<linePoints> mapRays, double fP
 {
     Map *classMap = new Map();
     
-    float mapBlockSizeW = classMap->fMapBlockW; //classMap->fMapHudSizeW / map[0].size();
-    float mapBlockSizeH = classMap->fMapBlockH; //classMap->fMapHudSizeH / map.size();
+    float mapBlockSizeW = classMap->fMapHudSizeW / map[0].size();
+    float mapBlockSizeH = classMap->fMapHudSizeH / map.size();
     
     for (int mapY = 0; mapY < map.size(); mapY++) {
         for (int mapX = 0; mapX < map[mapY].size(); mapX++) {
@@ -104,10 +104,16 @@ void Renderer::drawMap(vector<string> map, vector<linePoints> mapRays, double fP
     double lineY2 = fPlayerY + 8 * sinf(fPlayerA);
     lineY2 += mapBlockSizeW / 2;
     drawLine(lineX, lineY, lineX2, lineY2, 196, 196, 27);
+	
+	delete classMap;
 }
 
 vector<Renderer::interceptions> Renderer::castRays(double x, double y, double angle, vector<string> map, const char scanChar)
 {
+	int smallIter = 0;
+	int bigItter = 0;
+	int totalIter = 0;
+	
     Map *classMap = new Map();
     float mapBlockSizeW = classMap->fMapBlockW;
     float mapBlockSizeH = classMap->fMapBlockH;
@@ -122,7 +128,7 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
     double xTo = x;
     double yTo = y;
 
-    const double D_STEP_INC = 0.2f;
+    const double RAY_STEP_INC = 0.1f;
     double mapX = 0;
     double mapY = 0;
     
@@ -140,10 +146,14 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
         xTo = x;
         yTo = y;
         angleDelta += (FOV / scanField);
+		double cosDelta = cosf(angle + angleDelta);
+		double sinDelta = sinf(angle + angleDelta);
         
         //extend ray till collision
         while (!collision)
         {
+			totalIter++;
+			
             mapX = int(xTo / mapBlockSizeW);
             mapY = int(yTo / mapBlockSizeH);
             
@@ -195,8 +205,23 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
             
         skip_object:
 
-            xTo += D_STEP_INC * cosf(angle + angleDelta);
-            yTo += D_STEP_INC * sinf(angle + angleDelta);
+            //brute increment
+            double bruteInc = 4.0f;
+			double bigXTo = (xTo + bruteInc * cosDelta) / mapBlockSizeH;
+			double bigYTo = (yTo + bruteInc * sinDelta) / mapBlockSizeW;
+			
+			if (map.size() > bigYTo * bigXTo && map[bigYTo][bigXTo] != scanChar)
+			{
+				xTo = bigXTo * mapBlockSizeW;
+				yTo = bigYTo * mapBlockSizeH;
+				bigItter++;
+			}
+			else
+			{
+				xTo += RAY_STEP_INC * cosDelta;
+				yTo += RAY_STEP_INC * sinDelta;
+				smallIter++;
+			}
             
             
             //if the ray goes outside the map -> register out of bounds hit
@@ -242,7 +267,12 @@ vector<Renderer::interceptions> Renderer::castRays(double x, double y, double an
             mapRays.push_back(lPoints);
         }
     }
-    
+	
+	delete renderHelper;
+	delete classMap;
+	
+//	cout << "Big: " << bigItter << " Small: " << smallIter << " Total: " << totalIter << endl;
+	
     return interceptions;
 }
 
@@ -296,14 +326,14 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
         if (intercept.distance == -1)
             continue;
         
-        double wallFragH = _wallBlockSize / ((intercept.distance / 250) * _resolution_factor);
+        double wallFragH = _wallBlockSize / ((intercept.distance / 300.0f) * _resolution_factor);
 //        double wallFragH = _wallBlockSize / ((intercept.distance / screenH / 2) * _resolution_factor);
         if (wallFragH < 10)
             wallFragH = 10;
         
-        double wallFragY = (this->screenH - wallFragH) / 2;
-        double wallFragW = _resolution_factor; //this->screenW / _wallBlockSize;
-        double wallFragX = intercept.rayIndex * wallFragW;
+        double wallFragY = (double)(this->screenH - wallFragH) / 2;
+        double wallFragW = 2.0f; //(float)_resolution_factor; //this->screenW / _wallBlockSize;
+        double wallFragX = (double)intercept.rayIndex * (double)wallFragW;
         
         if (intercept.objType == 1)
         {
@@ -386,7 +416,7 @@ double Renderer::CalcTextureOffset(int mapX, int mapY, double xTo, double yTo)
 //    cout << "mapX_screen_from: " << mapX_screen_from << " | xto_screen: " << xto_screen << " | mapX_screen_to: " << mapX_screen_to << endl;
 //    cout << "mapY_screen_from: " << mapY_screen_from << " | yto_screen: " << yto_screen << " | mapY_screen_to: " << mapY_screen_to << endl;
 
-    float varFactor = 2.0f;
+    int varFactor = 2; //6;
 
     if (int(xTo * 10) - varFactor <= mapX_screen_from)
         wallOffset = mapY_screen_to - (double)yto_screen;
@@ -409,25 +439,34 @@ void Renderer::DrawWallTexture(vector<wallSliceStruct> wallSlices)
         return;
     
     const int MAX_SHADE = 180;
-    double texSliceW = (double)_wallBlockSize / (double)wallSlices.size();
-    double texX;
+    int texSliceW = _wallBlockSize / wallSlices.size();
+    int texX, texY;
     
     if (texSliceW < 1)
         texSliceW = 1;
     
     for (wallSliceStruct ws : wallSlices)
     {
-        texX = 64.0f - ws.texOffset;
+        texX = 64 - ws.texOffset;
+        texY = 0;
         
+//        if (ws.y < 0)
+//        {
+//            float wallScalar = _wallBlockSize / ws.h;
+//            texY = wallScalar * fabs(ws.y);
+//            ws.h += ws.y;
+//            ws.y = 0;
+//        }
+		
         TextureMap(TextureById(ws.objType),
-                   texX, 0,
-                   texSliceW, _wallBlockSize,
+                   texX, texY,
+                   texSliceW, _wallBlockSize * 2,
                    ws.w, ws.h,
                    ws.x, ws.y);
         
-        if (debug)
-            drawLine(ws.x, ws.y, ws.x, ws.y + ws.h / 4);
-        
+//        if (debug)
+//            drawLine(ws.x, ws.y, ws.x, ws.y + ws.h / 4);
+		
         //shade
         distanceShader ds;
         ds.r = ds.g = ds.b = 0;
@@ -435,19 +474,19 @@ void Renderer::DrawWallTexture(vector<wallSliceStruct> wallSlices)
         fillRect(ws.x, ws.y, ws.w, ws.h, ds);
     }
     
-    if (debug)
-    {
-        drawLine(wallSlices[0].x,
-                 wallSlices[0].y + wallSlices[0].h / 1.2,
-                 wallSlices[0].x,
-                 wallSlices[0].y + wallSlices[0].h);
-        
-        drawLine(wallSlices[wallSlices.size()-1].x + wallSlices[wallSlices.size()-1].w,
-                 wallSlices[wallSlices.size()-1].y + wallSlices[wallSlices.size()-1].h / 2,
-                 wallSlices[wallSlices.size()-1].x + wallSlices[wallSlices.size()-1].w,
-                 wallSlices[wallSlices.size()-1].y + wallSlices[wallSlices.size()-1].h);
-    }
-    
+//    if (debug)
+//    {
+//        drawLine(wallSlices[0].x,
+//                 wallSlices[0].y + wallSlices[0].h / 1.2,
+//                 wallSlices[0].x,
+//                 wallSlices[0].y + wallSlices[0].h);
+//
+//        drawLine(wallSlices[wallSlices.size()-1].x + wallSlices[wallSlices.size()-1].w,
+//                 wallSlices[wallSlices.size()-1].y + wallSlices[wallSlices.size()-1].h / 2,
+//                 wallSlices[wallSlices.size()-1].x + wallSlices[wallSlices.size()-1].w,
+//                 wallSlices[wallSlices.size()-1].y + wallSlices[wallSlices.size()-1].h);
+//    }
+	
     
 //    distanceShader ds;
 //    ds.r = ds.g = ds.b = ds.a = 150;
@@ -587,4 +626,7 @@ void Renderer::drawText(const char* text, double x, double y, double w, double h
     Message_rect.h = h;
     
     SDL_RenderCopy(_renderer, Message, NULL, &Message_rect);
+	
+	SDL_DestroyTexture(Message);
+	SDL_FreeSurface(surfaceMessage);
 }

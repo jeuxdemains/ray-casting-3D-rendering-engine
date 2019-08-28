@@ -26,7 +26,7 @@ Game::Game(int winWidth, int winHeight)
     
     this->renderer = new Renderer(winWidth / RES_SCALE_FACTOR, winHeight / RES_SCALE_FACTOR, this->sdl_renderer);
     SDL_RenderSetLogicalSize(this->sdl_renderer, winWidth / RES_SCALE_FACTOR, winHeight / RES_SCALE_FACTOR);
-//    SDL_RenderSetScale(this->sdl_renderer, 320.0f, 240.0f);
+//    SDL_RenderSetScale(this->sdl_renderer, 2, 2);
     
     this->map = new Map();
     
@@ -200,16 +200,21 @@ void Game::handleMovement()
     fMovDir     = 0.0f;
     strafeOn    = false;
     fRunAcc     = 0.0f;
+	
+	float fRunAccAmp = 4.5f;
     
     if (keyState[SDL_SCANCODE_Q])
         strafeOn = true;
     
     if (keyState[SDL_SCANCODE_W])
-        fRunAcc = 2.0f;
+        fRunAcc = fRunAccAmp;
+	
+	if (keyState[SDL_SCANCODE_S])
+		fRunAcc = -0.5f;
     
     if (keyState[SDL_SCANCODE_LEFT])
     {
-        fRotDir = -(fRotAcc + (fRunAcc / 2) / 24);
+        fRotDir = -(fRotAcc + (fRunAcc / 4) / 24);
         
         if (strafeOn)
         {
@@ -220,7 +225,7 @@ void Game::handleMovement()
     
     if (keyState[SDL_SCANCODE_RIGHT])
     {
-        fRotDir = fRotAcc + (fRunAcc / 2) / 24;
+        fRotDir = fRotAcc + (fRunAcc / 4) / 24;
         
         if (strafeOn)
         {

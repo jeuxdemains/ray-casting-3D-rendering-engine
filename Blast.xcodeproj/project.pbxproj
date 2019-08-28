@@ -70,6 +70,7 @@
 				52EA5D4922BA2E3C0021CCC0 /* Frameworks */,
 			);
 			sourceTree = "<group>";
+			usesTabs = 1;
 		};
 		52EA5D4022BA2E2A0021CCC0 /* Products */ = {
 			isa = PBXGroup;
@@ -281,6 +282,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = macosx;
 			};
 			name = Release;

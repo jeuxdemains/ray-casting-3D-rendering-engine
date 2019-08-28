@@ -28,7 +28,7 @@ class Renderer {
 private:
     SDL_Renderer* _renderer;
     float _wallBlockSize = 64.0f;
-    int _resolution_factor = 2; //12.0f;
+    double _resolution_factor = 2.0f; //12.0f;
     
     SDL_Texture* _wallTexture = nullptr;
     SDL_Texture* _boxTexture = nullptr;
@@ -65,7 +65,7 @@ public:
     
     struct wallSliceStruct
     {
-        double x,y,w,h;
+        int x,y,w,h;
         double texOffset;
         int objType;
         double distance;

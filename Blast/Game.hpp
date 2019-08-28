@@ -41,7 +41,7 @@ public:
     float fPlayerX = 10.0f;
     float fPlayerY = 10.0f;
     
-    float fRotAcc = 0.03f;
+    float fRotAcc = 0.02f;
     float fMovAcc = 1.0f;
     float fRunAcc = 0.0f;
     float fRotDir = 0.0f;
