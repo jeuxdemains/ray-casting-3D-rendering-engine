@@ -1,4 +1,7 @@
 # ray-casting-3D-rendering-engine
+NOTE: This is a work-in-progress-during-my-free-time project and it's far from complete, clean or optimized.
+
+
 This is my ray casting engine coded from scratch in C++ mimicking the engine of Wolfenstein 3D by John Carmack originally released in 1991 by id Software.
 
 It has custom distance based shader. Also some other features are coming like texture mapping etc.
