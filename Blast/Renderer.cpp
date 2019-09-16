@@ -50,6 +50,7 @@ void Renderer::loadAssets()
 	_wallTextures.push_back(loadTexture("assets/bricks3.jpg"));
 	_boxTextures.push_back(loadTexture("assets/box2.jpg"));
 	_boxTextures.push_back(loadTexture("assets/box3.jpg"));
+	_boxTextures.push_back(loadTexture("assets/box4.jpg"));
 	
 	_font = TTF_OpenFont("assets/font.ttf", 12);
 	if(!_font)
@@ -253,6 +254,9 @@ SDL_Texture* Renderer::texByMapChr(const char mapChr)
 			break;
 		case '@':
 			texture = _boxTextures[1];
+			break;
+		case '$':
+			texture = _boxTextures[2];
 			break;
 		default:
 			break;
