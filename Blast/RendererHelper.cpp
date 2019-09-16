@@ -6,10 +6,10 @@
 //  Copyright © 2019 Yuriy Georgiev. All rights reserved.
 //
 
-#include "RendererHelperFunctions.hpp"
+#include "RendererHelper.hpp"
 
 
-float RendererHelperFunctions::objDistFromCamera(double x, double xTo, double y, double yTo, double angle)
+float RendererHelper::objDistFromCamera(double x, double xTo, double y, double yTo, double angle)
 {
     double distX = fabs((x - xTo) * cosf(angle));
     double distY = fabs((y - yTo) * sinf(angle));

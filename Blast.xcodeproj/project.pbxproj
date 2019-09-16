@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		5233F9AD22C61EBB00B1779D /* assets in CopyFiles */ = {isa = PBXBuildFile; fileRef = 523257A422C554B5005A6BF4 /* assets */; };
 		5263521822C2B84200D82921 /* SDL2_ttf.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5263521722C2B84200D82921 /* SDL2_ttf.framework */; };
-		5290765A22E3910000FAAF05 /* RendererHelperFunctions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5290765822E3910000FAAF05 /* RendererHelperFunctions.cpp */; };
+		5290765A22E3910000FAAF05 /* RendererHelper.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5290765822E3910000FAAF05 /* RendererHelper.cpp */; };
 		52EA5D4322BA2E2A0021CCC0 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 52EA5D4222BA2E2A0021CCC0 /* main.cpp */; };
 		52EA5D4C22BA2E3C0021CCC0 /* SDL2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52EA5D4A22BA2E3C0021CCC0 /* SDL2.framework */; };
 		52EA5D4D22BA2E3C0021CCC0 /* SDL2_image.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 52EA5D4B22BA2E3C0021CCC0 /* SDL2_image.framework */; };
@@ -34,8 +34,8 @@
 /* Begin PBXFileReference section */
 		523257A422C554B5005A6BF4 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = "<group>"; };
 		5263521722C2B84200D82921 /* SDL2_ttf.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2_ttf.framework; path = ../../../../../Library/Frameworks/SDL2_ttf.framework; sourceTree = "<group>"; };
-		5290765822E3910000FAAF05 /* RendererHelperFunctions.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RendererHelperFunctions.cpp; sourceTree = "<group>"; };
-		5290765922E3910000FAAF05 /* RendererHelperFunctions.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RendererHelperFunctions.hpp; sourceTree = "<group>"; };
+		5290765822E3910000FAAF05 /* RendererHelper.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = RendererHelper.cpp; sourceTree = "<group>"; };
+		5290765922E3910000FAAF05 /* RendererHelper.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = RendererHelper.hpp; sourceTree = "<group>"; };
 		52EA5D3F22BA2E2A0021CCC0 /* Blast */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Blast; sourceTree = BUILT_PRODUCTS_DIR; };
 		52EA5D4222BA2E2A0021CCC0 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		52EA5D4A22BA2E3C0021CCC0 /* SDL2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SDL2.framework; path = ../../../../../Library/Frameworks/SDL2.framework; sourceTree = "<group>"; };
@@ -89,8 +89,8 @@
 				52EA5D4F22BA2E660021CCC0 /* Game.hpp */,
 				52EA5D5122BA2E720021CCC0 /* Renderer.cpp */,
 				52EA5D5222BA2E720021CCC0 /* Renderer.hpp */,
-				5290765822E3910000FAAF05 /* RendererHelperFunctions.cpp */,
-				5290765922E3910000FAAF05 /* RendererHelperFunctions.hpp */,
+				5290765822E3910000FAAF05 /* RendererHelper.cpp */,
+				5290765922E3910000FAAF05 /* RendererHelper.hpp */,
 				52EA5D5422BA2E920021CCC0 /* Map.cpp */,
 				52EA5D5522BA2E920021CCC0 /* Map.hpp */,
 			);
@@ -165,7 +165,7 @@
 			files = (
 				52EA5D5322BA2E720021CCC0 /* Renderer.cpp in Sources */,
 				52EA5D4322BA2E2A0021CCC0 /* main.cpp in Sources */,
-				5290765A22E3910000FAAF05 /* RendererHelperFunctions.cpp in Sources */,
+				5290765A22E3910000FAAF05 /* RendererHelper.cpp in Sources */,
 				52EA5D5622BA2E920021CCC0 /* Map.cpp in Sources */,
 				52EA5D5022BA2E660021CCC0 /* Game.cpp in Sources */,
 			);

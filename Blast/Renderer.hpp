@@ -20,74 +20,42 @@
 #include <SDL2_ttf/SDL_ttf.h>
 
 #include "Map.hpp"
-#include "RendererHelperFunctions.hpp"
+#include "RendererHelper.hpp"
 
 using namespace std;
 
 class Renderer {
 private:
+	const float _resolution_factor = 1.0f; //12.0f;
+	const int _scale_factor = 1;
+	const float _wallBlockSize = 64.0f / _scale_factor;
+	
     SDL_Renderer* _renderer;
-	
-    float _resolution_factor = 1.0f; //12.0f;
-	int _scale_factor = 1;
-    float _wallBlockSize = 64.0f / _scale_factor;
-	
-    SDL_Texture* _wallTexture = nullptr;
-    SDL_Texture* _boxTexture = nullptr;
-	SDL_Texture* _boxTexture2 = nullptr;
-    
-    SDL_Texture* _ceilTexture = nullptr;
-    SDL_Texture* _floorTexture = nullptr;
-    
+    SDL_Texture *_ceilTexture = nullptr, *_floorTexture = nullptr;
+	vector<SDL_Texture*> _wallTextures, _boxTextures;
     TTF_Font* _font = nullptr;
     
-    struct distanceShader {
-        int r;
-        int g;
-        int b;
-        int a;
+    struct distShader {
+        int r, g, b, a;
     };
     
 public:
-    //vars
     bool debug = false;
     int screenW, screenH;
     
-    struct interceptions {
-        double x;
-        double y;
-        double xTo;
-        double yTo;
-        double distance;
-        int mapX;
-        int mapY;
-        int objType;
+    struct intercepts {
+        double x, y, xTo, yTo, distance, rayAngle;
+        int mapX, mapY, objType, rayIndex;
 		SDL_Texture* texture = nullptr;
-        int rayIndex;
-        double rayAngle;
     };
     
     struct wallSliceStruct
     {
         int x,y,w,h;
 		bool isWestLook, isNorthLook;
-        double texOffset;
+        double texOffset, distance;
         int objType;
 		SDL_Texture* texture = nullptr;
-        double distance;
-    };
-    
-    struct objectInScreen {
-        double distance;
-        double rayAngle;
-        double objType;
-    };
-    
-    struct qpoint {
-        double x1; double y1;
-        double x2; double y2;
-        double x3; double y3;
-        double x4; double y4;
     };
     
     struct linePoints {
@@ -96,7 +64,6 @@ public:
     };
     
     vector<linePoints> mapRays;
-    vector<Renderer::objectInScreen> globalObjectsRegister;
     
     //functions
     Renderer(int winW, int winH, SDL_Renderer *renderer);
@@ -104,28 +71,61 @@ public:
     
     void renderFrame();
     void prepareRender();
+	void loadAssets();
 	
-    void drawMap(vector<string> map, vector<linePoints> mapRays, double fPlayerX, double fPlayerY, double fPlayerA, double fMovDir);
-    vector<vector<Renderer::interceptions>> castRays(double x, double y, double angle, vector<string> map, const char scanChar = '*');
-	linePoints addMapDebugRay(float x, float y, float xTo, float yTo, int scrnClmn, float angle);
-    void RenderScene(vector<interceptions> interceptions);
-    void TextureMap(SDL_Texture *texture,double srcX, double srcY, double srcW, double srcH, double destW, double destH, double destX, double destY);
+    void drawMap(vector<string> map, vector<linePoints> mapRays,
+				 double fPlayerX, double fPlayerY,
+				 double fPlayerA, double fMovDir);
+	
+    vector<vector<intercepts>>
+	castRays(double x, double y,
+			 double angle, vector<string> map,
+			 const char scanChar = '*');
+	
+	linePoints addMapDebugRay(float x, float y,
+							  float xTo, float yTo,
+							  int scrnClmn, float angle);
+	
+    void RenderScene(vector<intercepts> interceptions);
+	
+	SDL_Texture* loadTexture(const char* texturePath);
+	
+    void TextureMap(SDL_Texture *texture,
+					double srcX, double srcY,
+					double srcW, double srcH,
+					double destW, double destH,
+					double destX, double destY);
+	
     void drawCeil();
     void drawFloor();
-    void drawQuadrangles(vector<qpoint> points);
-    void drawQuadrangle(qpoint points);
     void DrawWallTexture(vector<wallSliceStruct> wallSlices);
-    double CalcTextureOffset(int mapX, int mapY, double xTo, double yTo);
+	
+    double CalcTextureOffset(int mapX, int mapY,
+							 double xTo, double yTo);
+	
+	double DistanceFactor(double fDistance);
     
     //primitives
-    void drawLine(double x, double y, double xTo, double yTo, int r = 255, int g = 255, int b = 255);
-    void fillRect(double x, double y, double w, double h, distanceShader shaderColor);
-    void drawRect(double x, double y, double w, double h, distanceShader shaderColor);
-    void drawText(const char* text, double x, double y, double w, double h, Uint8 r, Uint8 g, Uint8 b);
+    void drawLine(double x, double y,
+				  double xTo, double yTo,
+				  int r = 255, int g = 255, int b = 255);
+	
+    void fillRect(double x, double y,
+				  double w, double h,
+				  distShader shaderColor);
+	
+    void drawRect(double x, double y,
+				  double w, double h,
+				  distShader shaderColor);
+	
+    void drawText(const char* text,
+				  double x, double y,
+				  double w, double h,
+				  Uint8 r, Uint8 g, Uint8 b);
     
     //coloring
-    distanceShader calcDistShaderGrayscale(double distance, int color = 255);
-    distanceShader calcDistShaderColor(double distance, int r, int g, int b, int a);
+    distShader calcDistShaderGrayscale(double distance, int color = 255);
+    distShader calcDistShaderColor(double distance, int r, int g, int b, int a);
 };
 
 

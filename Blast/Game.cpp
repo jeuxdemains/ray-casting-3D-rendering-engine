@@ -21,11 +21,17 @@ Game::Game(int winWidth, int winHeight)
     this->sdl_window = SDL_CreateWindow("Blast Engine",
                                         SDL_WINDOWPOS_CENTERED,
                                         SDL_WINDOWPOS_CENTERED,
-                                        winWidth, winHeight, SDL_WINDOW_SHOWN); //SDL_WINDOW_INPUT_GRABBED
-    this->sdl_renderer = SDL_CreateRenderer(this->sdl_window, -1, SDL_RENDERER_SOFTWARE);
+                                        winWidth, winHeight, SDL_WINDOW_SHOWN);
+    this->sdl_renderer =
+		SDL_CreateRenderer(this->sdl_window, -1, SDL_RENDERER_SOFTWARE);
     
-    this->renderer = new Renderer(winWidth / RES_SCALE_FACTOR, winHeight / RES_SCALE_FACTOR, this->sdl_renderer);
-    SDL_RenderSetLogicalSize(this->sdl_renderer, winWidth / RES_SCALE_FACTOR, winHeight / RES_SCALE_FACTOR);
+    this->renderer = new Renderer(winWidth / RES_SCALE_FACTOR,
+								  winHeight / RES_SCALE_FACTOR,
+								  this->sdl_renderer);
+	
+    SDL_RenderSetLogicalSize(this->sdl_renderer,
+							 winWidth / RES_SCALE_FACTOR,
+							 winHeight / RES_SCALE_FACTOR);
     
     this->map = new Map();
 	this->GeneratePlayerAnglesMap();
@@ -94,22 +100,13 @@ void Game::GameLoop()
         collisionDetection(fOldPlayerX, fOldPlayerY);
         
         this->renderer->prepareRender();
-        this->renderer->globalObjectsRegister.clear();
-        
         this->renderer->mapRays.clear();
 		
-//        vector<Renderer::interceptions> interceptsTallObjects =
-//            this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap());
-//
-//        vector<Renderer::interceptions> interceptsLowObjects =
-//            this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap(), '#');
-//
-		vector<vector<Renderer::interceptions>> interceptsHiLo =
+		vector<vector<Renderer::intercepts>> interceptsHiLo =
 		this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap());
 		
         this->renderer->drawCeil();
         this->renderer->drawFloor();
-        
         this->renderer->RenderScene(interceptsHiLo[0]); //draw back objects
         this->renderer->RenderScene(interceptsHiLo[1]); //draw front objects
 		
@@ -117,16 +114,16 @@ void Game::GameLoop()
             DebugInfo();
         
         if (showMap)
-            this->renderer->drawMap(this->map->currentMap(), this->renderer->mapRays, fPlayerX, fPlayerY, fPlayerA, fMovDir);
+            this->renderer->drawMap(this->map->currentMap(),
+									this->renderer->mapRays,
+									fPlayerX, fPlayerY,
+									fPlayerA, fMovDir);
         
         this->renderer->renderFrame();
         
         frameTime = SDL_GetTicks() - startFrame;
-        
         if (fps > frameTime)
-        {
-            SDL_Delay(fps - frameTime);
-        }
+        	SDL_Delay(fps - frameTime);
     }
     
     SDL_DestroyRenderer(this->sdl_renderer);
@@ -187,7 +184,8 @@ void Game::collisionDetection(float fOldPlayerX, float fOldPlayerY)
     float cameraXDist = map->fMapBlockSize / 2;
     float cameraYDist = map->fMapBlockSize / 2;
 
-    Map::MapCoords mapCoords = map->posToCrd(fPlayerX + cameraXDist, fPlayerY + cameraYDist);
+    Map::MapCoords mapCoords =
+		map->posToCrd(fPlayerX + cameraXDist, fPlayerY + cameraYDist);
     
     vector<string> map = this->map->currentMap();
     

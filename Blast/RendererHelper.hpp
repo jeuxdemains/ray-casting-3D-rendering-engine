@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <cmath>
 
-class RendererHelperFunctions
+class RendererHelper
 {
 public:
     float objDistFromCamera(double x, double xTo, double y, double yTo, double angle);
