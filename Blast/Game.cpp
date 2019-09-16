@@ -21,15 +21,14 @@ Game::Game(int winWidth, int winHeight)
     this->sdl_window = SDL_CreateWindow("Blast Engine",
                                         SDL_WINDOWPOS_CENTERED,
                                         SDL_WINDOWPOS_CENTERED,
-                                        winWidth, winHeight, SDL_WINDOW_SHOWN); //SDL_WINDOW_INPUT_GRABBED
+                                        winWidth, winHeight, SDL_WINDOW_INPUT_GRABBED); //SDL_WINDOW_INPUT_GRABBED
     this->sdl_renderer = SDL_CreateRenderer(this->sdl_window, -1, SDL_RENDERER_SOFTWARE);
     
     this->renderer = new Renderer(winWidth / RES_SCALE_FACTOR, winHeight / RES_SCALE_FACTOR, this->sdl_renderer);
     SDL_RenderSetLogicalSize(this->sdl_renderer, winWidth / RES_SCALE_FACTOR, winHeight / RES_SCALE_FACTOR);
-//    SDL_RenderSetScale(this->sdl_renderer, 2, 2);
     
     this->map = new Map();
-    
+	this->GeneratePlayerAnglesMap();
     this->GameLoop();
  }
 
@@ -46,7 +45,6 @@ void Game::GameLoop()
     int fps = 1000 / 30;
     Uint32 startFrame;
     int frameTime;
-    int frameCount = 0;
     
     bool showMap = false;
     
@@ -77,6 +75,10 @@ void Game::GameLoop()
         }
         
         fPlayerA += fRotDir;
+		fPlayerA = (double)((int)(fPlayerA*100))/100;
+		if (fPlayerA > 6.28f || fPlayerA < -6.28f)
+			fPlayerA = 0.0f;
+		
         float fOldPlayerX = fPlayerX;
         float fOldPlayerY = fPlayerY;
         
@@ -85,28 +87,32 @@ void Game::GameLoop()
             fPlayerX += strafe * cosf(fPlayerA + PI / 2);
             fPlayerY += strafe * sinf(fPlayerA + PI / 2);
         }
-        
-        fPlayerX += fMovDir * cosf(fPlayerA);
-        fPlayerY += fMovDir * sinf(fPlayerA);
-        
+		
+		fPlayerX += fMovDir * playerAngleMapCos[fPlayerA];
+		fPlayerY += fMovDir * playerAngleMapSin[fPlayerA];
+		
         collisionDetection(fOldPlayerX, fOldPlayerY);
         
         this->renderer->prepareRender();
         this->renderer->globalObjectsRegister.clear();
         
         this->renderer->mapRays.clear();
-        vector<Renderer::interceptions> interceptsTallObjects =
-            this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap());
-        
-        vector<Renderer::interceptions> interceptsLowObjects =
-            this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap(), '#');
-        
+		
+//        vector<Renderer::interceptions> interceptsTallObjects =
+//            this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap());
+//
+//        vector<Renderer::interceptions> interceptsLowObjects =
+//            this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap(), '#');
+//
+		vector<vector<Renderer::interceptions>> interceptsHiLo =
+		this->renderer->castRays(fPlayerX, fPlayerY, fPlayerA, map->currentMap());
+		
         this->renderer->drawCeil();
         this->renderer->drawFloor();
         
-        this->renderer->RenderScene(interceptsTallObjects); //draw back objects
-        this->renderer->RenderScene(interceptsLowObjects); //draw front objects
-        
+        this->renderer->RenderScene(interceptsHiLo[0]); //draw back objects
+        this->renderer->RenderScene(interceptsHiLo[1]); //draw front objects
+		
         if (renderer->debug)
             DebugInfo();
         
@@ -114,8 +120,6 @@ void Game::GameLoop()
             this->renderer->drawMap(this->map->currentMap(), this->renderer->mapRays, fPlayerX, fPlayerY, fPlayerA, fMovDir);
         
         this->renderer->renderFrame();
-        
-        frameCount++;
         
         frameTime = SDL_GetTicks() - startFrame;
         
@@ -129,6 +133,15 @@ void Game::GameLoop()
     SDL_DestroyWindow(this->sdl_window);
     
     SDL_Quit();
+}
+
+void Game::GeneratePlayerAnglesMap()
+{
+	for (float angle = -6.28f; angle <= 6.28f; angle += 0.01f) {
+		float rounded = (double)((int)(angle*100))/100;
+		playerAngleMapCos[rounded] = cosf(rounded);
+		playerAngleMapSin[rounded] = sinf(rounded);
+	}
 }
 
 void Game::DebugInfo()
@@ -171,22 +184,23 @@ void Game::DebugInfo()
 
 void Game::collisionDetection(float fOldPlayerX, float fOldPlayerY)
 {
-    float cameraXDist = map->fMapBlockW / 2;
-    float cameraYDist = map->fMapBlockH / 2;
+    float cameraXDist = map->fMapBlockSize / 2;
+    float cameraYDist = map->fMapBlockSize / 2;
 
-    
     Map::MapCoords mapCoords = map->posToCrd(fPlayerX + cameraXDist, fPlayerY + cameraYDist);
     
     vector<string> map = this->map->currentMap();
     
-    if ((fPlayerX > fOldPlayerX && (map[mapCoords.y][mapCoords.x+1] == '#' || map[mapCoords.y][mapCoords.x+1] == '*')) ||
-        (fPlayerX < fOldPlayerX && (map[mapCoords.y][mapCoords.x-1] == '#' || map[mapCoords.y][mapCoords.x-1] == '*')))
+    if ((fPlayerX > fOldPlayerX && (map[mapCoords.y][mapCoords.x+1] != '.')) ||
+        (fPlayerX < fOldPlayerX && (map[mapCoords.y][mapCoords.x-1] != '.')) ||
+		mapCoords.x < 1)
     {
         fPlayerX = fOldPlayerX;
     }
     
-    if ((fPlayerY > fOldPlayerY && (map[mapCoords.y+1][mapCoords.x] == '#' || map[mapCoords.y+1][mapCoords.x] == '*')) ||
-        (fPlayerY < fOldPlayerY && (map[mapCoords.y-1][mapCoords.x] == '#' || map[mapCoords.y-1][mapCoords.x] == '*')))
+    if ((fPlayerY > fOldPlayerY && (map[mapCoords.y+1][mapCoords.x] != '.')) ||
+        (fPlayerY < fOldPlayerY && (map[mapCoords.y-1][mapCoords.x] != '.')) ||
+		mapCoords.y < 1)
     {
         fPlayerY = fOldPlayerY;
     }
@@ -201,7 +215,7 @@ void Game::handleMovement()
     strafeOn    = false;
     fRunAcc     = 0.0f;
 	
-	float fRunAccAmp = 4.5f;
+	float fRunAccAmp = 2.5f;
     
     if (keyState[SDL_SCANCODE_Q])
         strafeOn = true;

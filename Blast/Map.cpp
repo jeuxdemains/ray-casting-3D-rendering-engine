@@ -12,8 +12,8 @@ using namespace std;
 
 Map::Map()
 {
-    fMapHudSizeW = map[0].size() * fMapBlockW;
-    fMapHudSizeH = map.size() * fMapBlockH;
+    fMapHudSizeW = map[0].size() * fMapBlockSize;
+    fMapHudSizeH = map.size() * fMapBlockSize;
 }
 
 Map::~Map()
@@ -30,8 +30,8 @@ Map::MapCoords Map::posToCrd(float x, float y)
 {
     Map::MapCoords nMapXYCoords;
     
-    nMapXYCoords.x = int(x / this->fMapBlockW);
-    nMapXYCoords.y = int(y / this->fMapBlockH);
+    nMapXYCoords.x = int(x / this->fMapBlockSize);
+    nMapXYCoords.y = int(y / this->fMapBlockSize);
     
     return nMapXYCoords;
 }
@@ -40,8 +40,8 @@ Map::MapXYPos Map::crdToPos(int x, int y)
 {
     Map::MapXYPos fMapXYPos;
     
-    fMapXYPos.x = float(x * this->fMapBlockW);
-    fMapXYPos.y = float(x * this->fMapBlockH);
+    fMapXYPos.x = float(x * this->fMapBlockSize);
+    fMapXYPos.y = float(x * this->fMapBlockSize);
     
     return fMapXYPos;
 }

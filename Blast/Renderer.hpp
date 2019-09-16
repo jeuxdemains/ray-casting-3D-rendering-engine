@@ -27,11 +27,14 @@ using namespace std;
 class Renderer {
 private:
     SDL_Renderer* _renderer;
-    float _wallBlockSize = 64.0f;
-    double _resolution_factor = 2.0f; //12.0f;
-    
+	
+    float _resolution_factor = 1.0f; //12.0f;
+	int _scale_factor = 1;
+    float _wallBlockSize = 64.0f / _scale_factor;
+	
     SDL_Texture* _wallTexture = nullptr;
     SDL_Texture* _boxTexture = nullptr;
+	SDL_Texture* _boxTexture2 = nullptr;
     
     SDL_Texture* _ceilTexture = nullptr;
     SDL_Texture* _floorTexture = nullptr;
@@ -59,6 +62,7 @@ public:
         int mapX;
         int mapY;
         int objType;
+		SDL_Texture* texture = nullptr;
         int rayIndex;
         double rayAngle;
     };
@@ -66,8 +70,10 @@ public:
     struct wallSliceStruct
     {
         int x,y,w,h;
+		bool isWestLook, isNorthLook;
         double texOffset;
         int objType;
+		SDL_Texture* texture = nullptr;
         double distance;
     };
     
@@ -98,9 +104,10 @@ public:
     
     void renderFrame();
     void prepareRender();
-    
+	
     void drawMap(vector<string> map, vector<linePoints> mapRays, double fPlayerX, double fPlayerY, double fPlayerA, double fMovDir);
-    vector<interceptions> castRays(double x, double y, double angle, vector<string> map, const char scanChar = '*');
+    vector<vector<Renderer::interceptions>> castRays(double x, double y, double angle, vector<string> map, const char scanChar = '*');
+	linePoints addMapDebugRay(float x, float y, float xTo, float yTo, int scrnClmn, float angle);
     void RenderScene(vector<interceptions> interceptions);
     void TextureMap(SDL_Texture *texture,double srcX, double srcY, double srcW, double srcH, double destW, double destH, double destX, double destY);
     void drawCeil();
@@ -108,7 +115,6 @@ public:
     void drawQuadrangles(vector<qpoint> points);
     void drawQuadrangle(qpoint points);
     void DrawWallTexture(vector<wallSliceStruct> wallSlices);
-    SDL_Texture* TextureById(int objType);
     double CalcTextureOffset(int mapX, int mapY, double xTo, double yTo);
     
     //primitives

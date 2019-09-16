@@ -29,7 +29,9 @@ Renderer::Renderer(int winW, int winH, SDL_Renderer *renderer)
     _wallTexture = SDL_CreateTextureFromSurface(_renderer, image);
     image = IMG_Load("assets/box2.jpg");
     _boxTexture = SDL_CreateTextureFromSurface(_renderer, image);
-    
+	image = IMG_Load("assets/box3.jpg");
+    _boxTexture2 = SDL_CreateTextureFromSurface(_renderer, image);
+	
     _font = TTF_OpenFont("assets/font.ttf", 12);
     if(!_font)
         printf("TTF_OpenFont: %s\n", TTF_GetError());
@@ -62,14 +64,7 @@ void Renderer::drawMap(vector<string> map, vector<linePoints> mapRays, double fP
     for (int mapY = 0; mapY < map.size(); mapY++) {
         for (int mapX = 0; mapX < map[mapY].size(); mapX++) {
             
-            //wall
-            if (map[mapY][mapX] == '#' || map[mapY][mapX] == '*')
-            {
-                distanceShader distShader;
-                distShader.r = distShader.g = distShader.b = distShader.a = 255;
-                this->fillRect(mapX * mapBlockSizeW, mapY * mapBlockSizeH, mapBlockSizeW + 1, mapBlockSizeH + 1, distShader);
-            }
-            
+           
             if (map[mapY][mapX] == '.')
             {
                 distanceShader distShader;
@@ -77,6 +72,12 @@ void Renderer::drawMap(vector<string> map, vector<linePoints> mapRays, double fP
                 distShader.a = 255;
                 this->fillRect(mapX * mapBlockSizeW, mapY * mapBlockSizeH, mapBlockSizeW + 1, mapBlockSizeH + 1, distShader);
             }
+			else
+			{
+				distanceShader distShader;
+				distShader.r = distShader.g = distShader.b = distShader.a = 255;
+				this->fillRect(mapX * mapBlockSizeW, mapY * mapBlockSizeH, mapBlockSizeW + 1, mapBlockSizeH + 1, distShader);
+			}
         }
     }
     
@@ -108,180 +109,139 @@ void Renderer::drawMap(vector<string> map, vector<linePoints> mapRays, double fP
 	delete classMap;
 }
 
-vector<Renderer::interceptions> Renderer::castRays(double x, double y, double angle, vector<string> map, const char scanChar)
+vector<vector<Renderer::interceptions>>
+Renderer::castRays(double x, double y, double angle, vector<string> map, const char scanChar)
 {
-	int smallIter = 0;
-	int bigItter = 0;
-	int totalIter = 0;
+	Map *classMap = new Map();
+	float mapBlockSize = classMap->fMapBlockSize;
+	RendererHelperFunctions *renderHelper = new RendererHelperFunctions();
+	vector<Renderer::interceptions> interceptionsLowObjs;
+	vector<Renderer::interceptions> interceptionsHighObjs;
 	
-    Map *classMap = new Map();
-    float mapBlockSizeW = classMap->fMapBlockW;
-    float mapBlockSizeH = classMap->fMapBlockH;
-    
-    RendererHelperFunctions *renderHelper = new RendererHelperFunctions();
-    
-    double FOV = 60.0f / (360.0f / PI);
-
-    x += mapBlockSizeW / 2;
-    y += mapBlockSizeH / 2;
-    
-    double xTo = x;
-    double yTo = y;
-
-    const double RAY_STEP_INC = 0.1f;
-    double mapX = 0;
-    double mapY = 0;
-    
-    vector<Renderer::interceptions> interceptions;
-    
-    int screenColumn = 0;
-    
-    double angleDelta = -FOV / 2;
-    int scanField = this->screenW / _resolution_factor;
-    
-    for (int screenX = 0; screenX <= scanField; screenX += 1) {
-        
-        //init new loop values
-        bool collision = false;
-        xTo = x;
-        yTo = y;
-        angleDelta += (FOV / scanField);
-		double cosDelta = cosf(angle + angleDelta);
-		double sinDelta = sinf(angle + angleDelta);
-        
-        //extend ray till collision
-        while (!collision)
-        {
-			totalIter++;
+	const float RAY_STEP_INC = 0.02f;
+	const double FOV = 60.0f / (360.0f / PI);
+	const int scanField = this->screenW / _resolution_factor;
+	
+	SDL_Texture* texture = nullptr;
+	
+	x += mapBlockSize / 2;
+	y += mapBlockSize / 2;
+	
+	float xTo = x;
+	float yTo = y;
+	
+	int mapX = 0;
+	int mapY = 0;
+	
+	int screenColumn = 0;
+	float angleDelta = -FOV / 2;
+	
+	for (int screenX = 0; screenX <= scanField; screenX += 1) {
+		
+		//init new loop values
+		bool collision = false;
+		bool isSmallObjHit = false;
+		xTo = x;
+		yTo = y;
+		angleDelta += (FOV / scanField);
+		
+		float cosDelta = cosf(angle + angleDelta);
+		float sinDelta = sinf(angle + angleDelta);
+		
+		//extend ray till collision
+		while (!collision)
+		{
+			mapX = int(xTo / mapBlockSize);
+			mapY = int(yTo / mapBlockSize);
 			
-            mapX = int(xTo / mapBlockSizeW);
-            mapY = int(yTo / mapBlockSizeH);
-            
-            //default scanChar = '*'
-            if (map[mapY][mapX] == scanChar)
-            {
-                int objType = 1;
-            
-                double totalDist = renderHelper->objDistFromCamera(x, xTo, y, yTo, angle);
-                
-                if (map[mapY][mapX] == '#')
-                {   //if object already registered in the global register then skip it
-                    for (Renderer::objectInScreen object : globalObjectsRegister)
-                    {   
-                        if (object.rayAngle == (angle + angleDelta) &&
-                            object.objType == 1 &&
-                            object.distance < totalDist)
-                        {
-                            goto skip_object;
-                        }
-                    }
-                    objType = 0;
-                }
-                
-                Renderer::interceptions intercepts;
-                intercepts.x = x;
-                intercepts.y = y;
-                intercepts.xTo = xTo;
-                intercepts.yTo = yTo;
-                intercepts.distance = totalDist;
-                intercepts.mapX = mapX;
-                intercepts.mapY = mapY;
-                intercepts.objType = objType;
-                intercepts.rayIndex = screenColumn;
-                intercepts.rayAngle = angle + angleDelta;
-                
-                interceptions.push_back(intercepts);
-                
-                Renderer::objectInScreen object;
-                object.rayAngle = angle + angleDelta;
-                object.objType = objType;
-                object.distance = totalDist;
-                
-                globalObjectsRegister.push_back(object);
-                
-                screenColumn++;
-                collision = true;
-            }
-            
-        skip_object:
-
-            //brute increment
-            double bruteInc = 4.0f;
-			double bigXTo = (xTo + bruteInc * cosDelta) / mapBlockSizeH;
-			double bigYTo = (yTo + bruteInc * sinDelta) / mapBlockSizeW;
-			
-			if (map.size() > bigYTo * bigXTo && map[bigYTo][bigXTo] != scanChar)
+			//default scanChar = '*'
+			if (map[mapY][mapX] == scanChar || (map[mapY][mapX] != '.' && !isSmallObjHit))
 			{
-				xTo = bigXTo * mapBlockSizeW;
-				yTo = bigYTo * mapBlockSizeH;
-				bigItter++;
+				int objType = 0;
+				texture = _wallTexture;
+				double totalDist = renderHelper->objDistFromCamera(x, xTo, y, yTo, angle);
+				
+				if (map[mapY][mapX] != '*' && !isSmallObjHit)
+				{
+					isSmallObjHit = true;
+					objType = 1;
+					mapRays.push_back(addMapDebugRay(x, y, xTo, yTo, screenColumn, angle));
+					
+					switch (map[mapY][mapX]) {
+						case '#':
+							texture = _boxTexture;
+							break;
+						case '@':
+							texture = _boxTexture2;
+							break;
+						default:
+							texture = _boxTexture;
+							break;
+					}
+				}
+				
+				Renderer::interceptions intercepts;
+				intercepts.x = x;
+				intercepts.y = y;
+				intercepts.xTo = xTo;
+				intercepts.yTo = yTo;
+				intercepts.distance = totalDist;
+				intercepts.mapX = mapX;
+				intercepts.mapY = mapY;
+				intercepts.objType = objType;
+				intercepts.texture = texture;
+				intercepts.rayIndex = screenColumn;
+				intercepts.rayAngle = angle + angleDelta;
+				
+				if (objType == 1)
+					interceptionsLowObjs.push_back(intercepts);
+				else
+				{
+					interceptionsHighObjs.push_back(intercepts);
+					screenColumn++;
+					collision = true;
+				}
 			}
-			else
-			{
-				xTo += RAY_STEP_INC * cosDelta;
-				yTo += RAY_STEP_INC * sinDelta;
-				smallIter++;
-			}
-            
-            
-            //if the ray goes outside the map -> register out of bounds hit
-            if (ceil(xTo) / mapBlockSizeW >= map[0].size() ||
-                ceil(yTo) / mapBlockSizeH >= map.size() ||
-                floor(yTo) / mapBlockSizeH <= 0 ||
-                floor(xTo) / mapBlockSizeW <= 0)
-            {
 
-                Renderer::interceptions intercepts;
-                intercepts.distance = -1;
-                intercepts.rayIndex = screenColumn;
-                interceptions.push_back(intercepts);
-
-                screenColumn++;
-                collision = true;
-            }
-        }
-        
-        //finally save the line on the map once collision is detected
-        double distX = fabs(x - xTo) * cosf(angle);
-        double distY = fabs(y - yTo) * sinf(angle);
-        double fPointsDist = fabs(distX + distY);
-        
-        linePoints lPoints;
-        lPoints.x = x;
-        lPoints.y = y;
-        lPoints.xTo = xTo;
-        lPoints.yTo = yTo;
-        lPoints.rayIndex = screenColumn-1;
-        lPoints.distance = fPointsDist;
-        
-        //if second iteration (smaller objects)
-        if (mapRays.size() > scanField)
-        {
-            if (mapRays[screenColumn-1].distance > fPointsDist)
-            {
-                mapRays.at(screenColumn-1) = lPoints;
-            }
-        }
-        else
-        {
-            mapRays.push_back(lPoints);
-        }
-    }
+			xTo += RAY_STEP_INC * cosDelta;
+			yTo += RAY_STEP_INC * sinDelta;
+		}
+		
+		if (!isSmallObjHit)
+			mapRays.push_back(addMapDebugRay(x, y, xTo, yTo, screenColumn, angle));
+	}
 	
 	delete renderHelper;
 	delete classMap;
 	
-//	cout << "Big: " << bigItter << " Small: " << smallIter << " Total: " << totalIter << endl;
+	vector<vector<Renderer::interceptions>> hiLoIntercepts;
+	hiLoIntercepts.push_back(interceptionsHighObjs);
+	hiLoIntercepts.push_back(interceptionsLowObjs);
 	
-    return interceptions;
+	return hiLoIntercepts;
+}
+
+Renderer::linePoints Renderer::addMapDebugRay(float x, float y, float xTo, float yTo, int scrnClmn, float angle)
+{
+	double distX = fabs(x - xTo) * cosf(angle);
+	double distY = fabs(y - yTo) * sinf(angle);
+	double fPointsDist = fabs(distX + distY);
+	
+	linePoints lPoints;
+	lPoints.x = x;
+	lPoints.y = y;
+	lPoints.xTo = xTo;
+	lPoints.yTo = yTo;
+	lPoints.rayIndex = scrnClmn-1;
+	lPoints.distance = fPointsDist;
+	
+	return lPoints;
 }
 
 void Renderer::drawLine(double x, double y, double xTo, double yTo, int r, int g, int b)
 {
     if (debug)
-    {
-        r = 255; g = b = 0;
-    }
+    	r = 255; g = b = 0;
     
     SDL_SetRenderDrawColor(_renderer, r, g, b, SDL_ALPHA_OPAQUE);
     SDL_RenderDrawLine(_renderer, x, y, xTo, yTo);
@@ -326,22 +286,21 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
         if (intercept.distance == -1)
             continue;
         
-        double wallFragH = _wallBlockSize / ((intercept.distance / 300.0f) * _resolution_factor);
-//        double wallFragH = _wallBlockSize / ((intercept.distance / screenH / 2) * _resolution_factor);
+        double wallFragH = _wallBlockSize / ((intercept.distance / (300.0f * _resolution_factor / 2)) * _resolution_factor);
         if (wallFragH < 10)
             wallFragH = 10;
         
         double wallFragY = (double)(this->screenH - wallFragH) / 2;
-        double wallFragW = 2.0f; //(float)_resolution_factor; //this->screenW / _wallBlockSize;
+		double wallFragW = _resolution_factor;
         double wallFragX = (double)intercept.rayIndex * (double)wallFragW;
         
-        if (intercept.objType == 1)
+        if (intercept.objType == 0)
         {
             wallFragH *= 2;
             wallFragY -= wallFragH / 2;
         }
         
-        fillRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShaderGrayscale(intercept.distance));
+//        fillRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShaderGrayscale(intercept.distance));
 //        drawRect(wallFragX, wallFragY, wallFragW, wallFragH, calcDistShaderGrayscale(intercept.distance));
         
         
@@ -351,9 +310,7 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
         if (isNewBlock || isFirstBlock)
         {
             if (isNewBlock)
-            {
-                DrawWallTexture(wallSlices);
-            }
+            	DrawWallTexture(wallSlices);
             
             wallSlices.clear();
         }
@@ -367,30 +324,11 @@ void Renderer::RenderScene(vector<interceptions> interceptions)
         wallSlice.distance = intercept.distance;
         wallSlice.objType = intercept.objType;
         wallSlice.texOffset = wallOffset;
-        
+		wallSlice.texture = intercept.texture;
+//		wallSlice.isWestLook = (intercept.xTo > (intercept.mapX + _wallBlockSize / 10)) ? true : false;
+//		wallSlice.isNorthLook = (intercept.y < intercept.yTo) ? true : false;
+		
         wallSlices.push_back(wallSlice);
-        
-        
-//        int mapX_screen_to = (intercept.mapX + 1) * _wallBlockSize;
-//        int mapX_screen_from = mapX_screen_to - _wallBlockSize;
-//
-//        int mapY_screen_to = (intercept.mapY + 1) * _wallBlockSize;
-//        int mapY_screen_from = mapY_screen_to - _wallBlockSize;
-//
-//        int xto_screen = intercept.xTo * 10;
-//        int yto_screen = intercept.yTo * 10;
-//
-//        int wallOffset = 0;
-//
-//        if (yto_screen + 5 >= mapY_screen_to)
-//            wallOffset = mapX_screen_to - xto_screen;
-//        if (mapY_screen_from >= yto_screen - 4)
-//            wallOffset = 1 + xto_screen - mapX_screen_from;
-//
-//        if (mapX_screen_from >= xto_screen - 4)
-//            wallOffset = mapY_screen_to - yto_screen;
-//        if (mapX_screen_to <= xto_screen + 5)
-//            wallOffset = 1 + yto_screen - mapY_screen_from;
         
         last_mapX = intercept.mapX;
         last_mapY = intercept.mapY;
@@ -408,14 +346,11 @@ double Renderer::CalcTextureOffset(int mapX, int mapY, double xTo, double yTo)
     int mapY_screen_to = (mapY + 1) * _wallBlockSize;
     int mapY_screen_from = mapY_screen_to - _wallBlockSize;
     
-    double xto_screen = xTo * 10; //round(((float)xTo * 10) / _wallBlockSize) * _wallBlockSize; //xTo * 10;
-    double yto_screen = yTo * 10; //round(((float)yTo * 10) / _wallBlockSize) * _wallBlockSize;
+    double xto_screen = xTo * 10;
+    double yto_screen = yTo * 10;
 
-    double wallOffset = 64.0f;
-    
-//    cout << "mapX_screen_from: " << mapX_screen_from << " | xto_screen: " << xto_screen << " | mapX_screen_to: " << mapX_screen_to << endl;
-//    cout << "mapY_screen_from: " << mapY_screen_from << " | yto_screen: " << yto_screen << " | mapY_screen_to: " << mapY_screen_to << endl;
-
+    double wallOffset = 64;
+	
     int varFactor = 2; //6;
 
     if (int(xTo * 10) - varFactor <= mapX_screen_from)
@@ -438,29 +373,26 @@ void Renderer::DrawWallTexture(vector<wallSliceStruct> wallSlices)
     if (wallSlices.size() == 0)
         return;
     
-    const int MAX_SHADE = 180;
-    int texSliceW = _wallBlockSize / wallSlices.size();
-    int texX, texY;
-    
+    const int MAX_SHADE = 220;
+	const int DARK_SHADE = 0;
+	const int LIGHT_SHADE = 100;
+	
+    int texSliceW = _wallBlockSize / wallSlices.size() * _scale_factor;
+    int texX;
+    int texH = _wallBlockSize * _scale_factor;
+	
     if (texSliceW < 1)
         texSliceW = 1;
     
     for (wallSliceStruct ws : wallSlices)
     {
-        texX = 64 - ws.texOffset;
-        texY = 0;
-        
-//        if (ws.y < 0)
-//        {
-//            float wallScalar = _wallBlockSize / ws.h;
-//            texY = wallScalar * fabs(ws.y);
-//            ws.h += ws.y;
-//            ws.y = 0;
-//        }
+        texX = (_wallBlockSize - ws.texOffset) * _scale_factor;
+		if (ws.objType == 0)
+			texH = _wallBlockSize * _scale_factor * 2;
 		
-        TextureMap(TextureById(ws.objType),
-                   texX, texY,
-                   texSliceW, _wallBlockSize * 2,
+        TextureMap(ws.texture,
+                   texX, 0,
+                   texSliceW, texH,
                    ws.w, ws.h,
                    ws.x, ws.y);
         
@@ -469,49 +401,30 @@ void Renderer::DrawWallTexture(vector<wallSliceStruct> wallSlices)
 		
         //shade
         distanceShader ds;
-        ds.r = ds.g = ds.b = 0;
+		ds.r = ds.g = ds.b = 0;
         ds.a = (ws.distance / 1.5f > MAX_SHADE) ? MAX_SHADE : ws.distance / 1.5f ;
         fillRect(ws.x, ws.y, ws.w, ws.h, ds);
+		
+//		if (ws.isWestLook)
+//		{
+//			ds.r = ds.g = ds.b = DARK_SHADE;
+//			ds.a = 100;
+//			fillRect(ws.x, ws.y, ws.w, ws.h, ds);
+//		}
     }
     
-//    if (debug)
-//    {
-//        drawLine(wallSlices[0].x,
-//                 wallSlices[0].y + wallSlices[0].h / 1.2,
-//                 wallSlices[0].x,
-//                 wallSlices[0].y + wallSlices[0].h);
-//
-//        drawLine(wallSlices[wallSlices.size()-1].x + wallSlices[wallSlices.size()-1].w,
-//                 wallSlices[wallSlices.size()-1].y + wallSlices[wallSlices.size()-1].h / 2,
-//                 wallSlices[wallSlices.size()-1].x + wallSlices[wallSlices.size()-1].w,
-//                 wallSlices[wallSlices.size()-1].y + wallSlices[wallSlices.size()-1].h);
-//    }
-	
-    
-//    distanceShader ds;
-//    ds.r = ds.g = ds.b = ds.a = 150;
-//    fillRect(wallSlices[wallSlices.size()-1].x,
-//             wallSlices[wallSlices.size()-1].y,
-//             wallSlices[wallSlices.size()-1].w,
-//             wallSlices[wallSlices.size()-1].h,
-//             ds);
-}
+    if (debug)
+    {
+        drawLine(wallSlices[0].x,
+                 wallSlices[0].y + wallSlices[0].h / 1.2,
+                 wallSlices[0].x,
+                 wallSlices[0].y + wallSlices[0].h);
 
-SDL_Texture* Renderer::TextureById(int objType)
-{
-    SDL_Texture* texture = nullptr;
-    
-    switch (objType) {
-        case 0:
-            texture = _boxTexture;
-            break;
-        case 1:
-        default:
-            texture = _wallTexture;
-            break;
+        drawLine(wallSlices[wallSlices.size()-1].x + wallSlices[wallSlices.size()-1].w,
+                 wallSlices[wallSlices.size()-1].y + wallSlices[wallSlices.size()-1].h / 2,
+                 wallSlices[wallSlices.size()-1].x + wallSlices[wallSlices.size()-1].w,
+                 wallSlices[wallSlices.size()-1].y + wallSlices[wallSlices.size()-1].h);
     }
-    
-    return texture;
 }
 
 void Renderer::TextureMap(SDL_Texture *texture,

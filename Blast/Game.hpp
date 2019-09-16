@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <vector>
+#include <map>
 #include <SDL2/SDL.h>
 
 #include "Renderer.hpp"
@@ -33,9 +34,13 @@ public:
     void collisionDetection(float fOldPlayerX, float fOldPlayerY);
     void handleMovement();
     void DebugInfo();
+	void GeneratePlayerAnglesMap();
     
     Renderer *renderer = nullptr;
     Map *map = nullptr;
+	
+	std::map <float, float> playerAngleMapSin;
+	std::map <float, float> playerAngleMapCos;
     
     float fPlayerA = 0.0f;
     float fPlayerX = 10.0f;
