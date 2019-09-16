@@ -10,11 +10,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Blast/Renderer.cpp"
-            timestampString = "590359435.685488"
+            timestampString = "590360959.489177"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "388"
-            endingLineNumber = "388"
+            startingLineNumber = "421"
+            endingLineNumber = "421"
             landmarkName = "Renderer::CalcTextureOffset(int mapX, int mapY, double xTo, double yTo)"
             landmarkType = "7">
          </BreakpointContent>
@@ -26,11 +26,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Blast/Renderer.cpp"
-            timestampString = "590359435.685931"
+            timestampString = "590360959.4899091"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "321"
-            endingLineNumber = "321"
+            startingLineNumber = "354"
+            endingLineNumber = "354"
             landmarkName = "Renderer::RenderScene(vector&lt;intercepts&gt; interceptions)"
             landmarkType = "7">
          </BreakpointContent>
@@ -42,7 +42,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Blast/Game.cpp"
-            timestampString = "590359435.68629"
+            timestampString = "590360959.4905"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "111"
@@ -58,12 +58,28 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "Blast/Renderer.cpp"
-            timestampString = "590359435.686337"
+            timestampString = "590360959.4905421"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "355"
-            endingLineNumber = "355"
+            startingLineNumber = "388"
+            endingLineNumber = "388"
             landmarkName = "Renderer::RenderScene(vector&lt;intercepts&gt; interceptions)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "Blast/Renderer.cpp"
+            timestampString = "590360959.4911259"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "220"
+            endingLineNumber = "220"
+            landmarkName = "Renderer::isHighObjHit(const char mapChr)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

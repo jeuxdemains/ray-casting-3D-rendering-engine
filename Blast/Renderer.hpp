@@ -89,6 +89,9 @@ public:
     void RenderScene(vector<intercepts> interceptions);
 	
 	SDL_Texture* loadTexture(const char* texturePath);
+	bool isHighObjHit(const char mapChr);
+	bool isLowObjHit(const char mapChr);
+	SDL_Texture* texByMapChr(const char mapChr);
 	
     void TextureMap(SDL_Texture *texture,
 					double srcX, double srcY,

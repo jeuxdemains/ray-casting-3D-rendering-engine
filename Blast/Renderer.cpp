@@ -47,6 +47,7 @@ void Renderer::loadAssets()
 	_floorTexture = loadTexture("assets/floor.jpg");
 	
 	_wallTextures.push_back(loadTexture("assets/bricks2.jpg"));
+	_wallTextures.push_back(loadTexture("assets/bricks3.jpg"));
 	_boxTextures.push_back(loadTexture("assets/box2.jpg"));
 	_boxTextures.push_back(loadTexture("assets/box3.jpg"));
 	
@@ -123,8 +124,6 @@ Renderer::castRays(double x, double y, double angle,
 	RendererHelper *renderHelper = new RendererHelper();
 	vector<intercepts> icpsLoObjs, icpsHiObjs;
 	
-	SDL_Texture* texture = nullptr;
-	
 	x += mapBlockSize / 2;
 	y += mapBlockSize / 2;
 	
@@ -154,18 +153,17 @@ Renderer::castRays(double x, double y, double angle,
 			mapX = int(xTo / mapBlockSize);
 			mapY = int(yTo / mapBlockSize);
 			
-			bool isHiObjHit = (map[mapY][mapX] == '*');
-			bool isLoObjHit = (map[mapY][mapX] != '.' && !isLoObjAlreadyHit);
+			bool isHiObjHit = isHighObjHit(map[mapY][mapX]);
+			bool isLoObjHit = (isLowObjHit(map[mapY][mapX]) && !isLoObjAlreadyHit);
 			
 			if (isHiObjHit || isLoObjHit)
 			{
 				int objType = 0;
-				texture = _wallTextures[0];
 				
 				double totalDist =
 					renderHelper->objDistFromCamera(x, xTo, y, yTo, angle);
 				
-				if (map[mapY][mapX] != '*' && !isLoObjAlreadyHit)
+				if (!isHiObjHit && !isLoObjAlreadyHit)
 				{
 					isLoObjAlreadyHit = true;
 					objType = 1;
@@ -173,18 +171,6 @@ Renderer::castRays(double x, double y, double angle,
 						addMapDebugRay(x, y, xTo, yTo, screenColumn, angle);
 					
 					mapRays.push_back(linePts);
-					
-					switch (map[mapY][mapX]) {
-						case '#':
-							texture = _boxTextures[0];
-							break;
-						case '@':
-							texture = _boxTextures[1];
-							break;
-						default:
-							texture = _boxTextures[0];
-							break;
-					}
 				}
 				
 				Renderer::intercepts intercepts;
@@ -196,7 +182,7 @@ Renderer::castRays(double x, double y, double angle,
 				intercepts.mapX = mapX;
 				intercepts.mapY = mapY;
 				intercepts.objType = objType;
-				intercepts.texture = texture;
+				intercepts.texture = texByMapChr(map[mapY][mapX]);
 				intercepts.rayIndex = screenColumn;
 				intercepts.rayAngle = angle + angleDelta;
 				
@@ -228,6 +214,53 @@ Renderer::castRays(double x, double y, double angle,
 	
 	return hiLoIntercepts;
 }
+
+bool Renderer::isHighObjHit(const char mapChr)
+{
+	switch (mapChr) {
+		case '*':
+			return true;
+			break;
+		case '%':
+			return true;
+			break;
+		default:
+			return false;
+			break;
+	}
+	
+	return false;
+}
+
+bool Renderer::isLowObjHit(const char mapChr)
+{
+	return (mapChr != '.');
+}
+
+SDL_Texture* Renderer::texByMapChr(const char mapChr)
+{
+	SDL_Texture* texture = nullptr;
+	
+	switch (mapChr) {
+		case '*':
+			texture = _wallTextures[0];
+			break;
+		case '%':
+			texture = _wallTextures[1];
+			break;
+		case '#':
+			texture = _boxTextures[0];
+			break;
+		case '@':
+			texture = _boxTextures[1];
+			break;
+		default:
+			break;
+	}
+	
+	return texture;
+}
+
 
 Renderer::linePoints
 Renderer::addMapDebugRay(float x, float y, float xTo, float yTo,
