@@ -419,7 +419,7 @@ void Renderer::DrawWallTexture(vector<wallSliceStruct> wallSlices)
     
     for (wallSliceStruct ws : wallSlices)
     {
-        texX = (_wallBlockSize - (int)ws.texOffset) * _scale_factor;
+        texX = (_wallBlockSize - ws.texOffset) * _scale_factor;
 		if (ws.objType == 0)
 			texH = _wallBlockSize * _scale_factor * 2;
 		
