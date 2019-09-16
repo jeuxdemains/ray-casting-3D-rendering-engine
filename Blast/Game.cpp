@@ -21,7 +21,7 @@ Game::Game(int winWidth, int winHeight)
     this->sdl_window = SDL_CreateWindow("Blast Engine",
                                         SDL_WINDOWPOS_CENTERED,
                                         SDL_WINDOWPOS_CENTERED,
-                                        winWidth, winHeight, SDL_WINDOW_INPUT_GRABBED); //SDL_WINDOW_INPUT_GRABBED
+                                        winWidth, winHeight, SDL_WINDOW_SHOWN); //SDL_WINDOW_INPUT_GRABBED
     this->sdl_renderer = SDL_CreateRenderer(this->sdl_window, -1, SDL_RENDERER_SOFTWARE);
     
     this->renderer = new Renderer(winWidth / RES_SCALE_FACTOR, winHeight / RES_SCALE_FACTOR, this->sdl_renderer);
